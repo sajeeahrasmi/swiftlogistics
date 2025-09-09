@@ -1,0 +1,49 @@
+# Node dependencies
+node_modules/
+**/node_modules/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files (secrets, configs)
+.env
+.env.*
+*.env
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE/editor configs
+.vscode/
+.idea/
+*.swp
+
+# Build / output / coverage
+dist/
+build/
+coverage/
+
+# Kafka / Docker local volumes (keep configs, ignore generated data)
+backend/kafka/data/
+backend/kafka/logs/
+
+# Service-specific files
+backend/services/auth-service/error.log
+backend/services/order-service/logs/
+
+# Package lockfiles (since you have multiple services, skip global locks)
+package-lock.json
+**/package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Misc
+*.pem
+*.crt
+*.key

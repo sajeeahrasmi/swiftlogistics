@@ -1,0 +1,23 @@
+{
+  "name": "swiftlogistics-backend",
+  "version": "1.0.0",
+  "description": "SwiftLogistics Backend Microservices",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "start:auth": "cd backend/services/auth-service && npm start",
+    "start:order": "cd backend/services/order-service && npm start",
+    "start:tracking": "cd backend/services/tracking-service && npm start",
+    "start:mocks": "concurrently \"cd backend/mocks/mock-cms && npm start\" \"cd backend/mocks/mock-ros && npm start\" \"cd backend/mocks/mock-wms && npm start\"",
+    "kafka:up": "cd backend/kafka && docker-compose up -d",
+    "kafka:down": "cd backend/kafka && docker-compose down"
+  },
+  "keywords": ["logistics", "microservices", "kafka"],
+  "author": "SwiftLogistics Team",
+  "license": "MIT",
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "concurrently": "^8.2.0"
+  }
+}
