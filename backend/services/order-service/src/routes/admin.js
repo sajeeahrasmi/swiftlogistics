@@ -116,6 +116,145 @@ router.get('/clients', adminLimiter, async (req, res) => {
   }
 });
 
+// Get individual client details
+router.get('/clients/:id', adminLimiter, async (req, res) => {
+  try {
+    const clientId = parseInt(req.params.id);
+    
+    if (isNaN(clientId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid client ID'
+      });
+    }
+
+    const result = await query(`
+      SELECT 
+        c.*,
+        u.first_name,
+        u.last_name,
+        u.email,
+        u.phone,
+        COUNT(o.id) as total_orders,
+        COUNT(CASE WHEN o.status = 'delivered' THEN 1 END) as completed_orders,
+        COUNT(CASE WHEN o.status = 'pending' THEN 1 END) as pending_orders,
+        COUNT(CASE WHEN o.status = 'in_transit' THEN 1 END) as in_transit_orders,
+        MAX(o.created_at) as last_order_date
+      FROM clients c
+      LEFT JOIN users u ON c.user_id = u.id
+      LEFT JOIN orders o ON c.id = o.client_id
+      WHERE c.id = $1
+      GROUP BY c.id, u.first_name, u.last_name, u.email, u.phone
+    `, [clientId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Client not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        client: result.rows[0]
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching client details:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch client details'
+    });
+  }
+});
+
+// Get individual assignment details
+router.get('/assignments/:id', adminLimiter, async (req, res) => {
+  try {
+    const assignmentId = parseInt(req.params.id);
+    
+    if (isNaN(assignmentId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid assignment ID'
+      });
+    }
+
+    const result = await query(`
+      SELECT 
+        oa.id,
+        oa.order_id,
+        oa.driver_id,
+        oa.status,
+        oa.assigned_at,
+        oa.completed_at,
+        oa.accepted_at,
+        oa.started_at,
+        oa.assignment_notes,
+        oa.driver_notes,
+        oa.admin_notes,
+        oa.estimated_pickup_time,
+        oa.estimated_delivery_time,
+        oa.actual_pickup_time,
+        oa.actual_delivery_time,
+        -- Driver information
+        CONCAT(ud.first_name, ' ', ud.last_name) as driver_name,
+        ud.email as driver_email,
+        ud.phone as driver_phone,
+        d.driver_license,
+        d.vehicle_type,
+        d.vehicle_plate,
+        d.vehicle_model,
+        d.vehicle_capacity_kg,
+        d.status as driver_status,
+        -- Client information
+        CONCAT(uc.first_name, ' ', uc.last_name) as client_name,
+        uc.email as client_email,
+        uc.phone as client_phone,
+        c.company_name,
+        -- Order information
+        o.tracking_number,
+        o.status as order_status,
+        o.priority,
+        o.pickup_address,
+        o.delivery_address,
+        o.recipient_name,
+        o.recipient_phone,
+        o.special_instructions,
+        o.created_at as order_created_at,
+        o.estimated_delivery_time as order_estimated_delivery
+      FROM order_assignments oa
+      LEFT JOIN drivers d ON oa.driver_id = d.id
+      LEFT JOIN users ud ON d.user_id = ud.id
+      LEFT JOIN orders o ON oa.order_id = o.id
+      LEFT JOIN clients c ON o.client_id = c.id
+      LEFT JOIN users uc ON c.user_id = uc.id
+      WHERE oa.id = $1
+    `, [assignmentId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Assignment not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        assignment: result.rows[0]
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching assignment details:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch assignment details'
+    });
+  }
+});
+
 // Additional admin-only routes
 router.get('/reports/daily', adminLimiter, async (req, res) => {
   // This would generate daily reports
