@@ -224,8 +224,13 @@ class AdminDashboard {
     }
 
     async loadDashboard() {
-        const overview = await this.apiRequest('/dashboard/overview');
-        if (!overview) return;
+        const response = await this.apiRequest('/dashboard/overview');
+        if (!response || !response.success) return;
+
+        const data = response.data;
+        
+        // Process the data to get dashboard metrics
+        const metrics = this.processDashboardData(data);
 
         const content = `
             <div class="page-header">
@@ -237,25 +242,25 @@ class AdminDashboard {
             <div class="row mb-4">
                 <div class="col-md-3 mb-3">
                     <div class="stat-card text-center">
-                        <div class="stat-number text-primary">${overview.totalOrders || 0}</div>
+                        <div class="stat-number text-primary">${metrics.totalOrders}</div>
                         <div class="stat-label">Total Orders</div>
                     </div>
                 </div>
                 <div class="col-md-3 mb-3">
                     <div class="stat-card text-center">
-                        <div class="stat-number text-success">${overview.pendingOrders || 0}</div>
+                        <div class="stat-number text-warning">${metrics.pendingOrders}</div>
                         <div class="stat-label">Pending Orders</div>
                     </div>
                 </div>
                 <div class="col-md-3 mb-3">
                     <div class="stat-card text-center">
-                        <div class="stat-number text-info">${overview.activeDrivers || 0}</div>
-                        <div class="stat-label">Active Drivers</div>
+                        <div class="stat-number text-info">${metrics.activeDrivers}</div>
+                        <div class="stat-label">Available Drivers</div>
                     </div>
                 </div>
                 <div class="col-md-3 mb-3">
                     <div class="stat-card text-center">
-                        <div class="stat-number text-warning">${overview.inTransitOrders || 0}</div>
+                        <div class="stat-number text-success">${metrics.inTransitOrders}</div>
                         <div class="stat-label">In Transit</div>
                     </div>
                 </div>
@@ -288,11 +293,15 @@ class AdminDashboard {
                         </div>
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <span>Available Drivers</span>
-                            <span class="badge bg-info">${overview.availableDrivers || 0}</span>
+                            <span class="badge bg-info">${metrics.activeDrivers}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>Delivered Today</span>
+                            <span class="badge bg-success">${metrics.deliveredToday}</span>
                         </div>
                         <div class="d-flex justify-content-between align-items-center">
-                            <span>Failed Orders</span>
-                            <span class="badge bg-danger">${overview.failedOrders || 0}</span>
+                            <span>Failed Today</span>
+                            <span class="badge bg-danger">${metrics.failedToday}</span>
                         </div>
                     </div>
                 </div>
@@ -463,17 +472,17 @@ class AdminDashboard {
     }
 
     async loadDriverManagement() {
-        const response = await this.apiRequest('/api/drivers/available', {}, true);
+        const response = await this.apiRequest('/api/drivers', {}, true);
         if (!response) return;
 
-        const drivers = response.data?.available_drivers || response.available_drivers || response || [];
+        const drivers = response.data?.drivers || response.drivers || response || [];
         console.log('Drivers data:', response);
         console.log('Drivers array:', drivers);
 
         const content = `
             <div class="page-header">
                 <h1 class="page-title">Driver Management</h1>
-                <p class="page-subtitle">Monitor and manage driver status</p>
+                <p class="page-subtitle">Monitor and manage all drivers</p>
                 <div class="d-flex gap-2 mt-3">
                     <button class="btn btn-primary" onclick="adminDashboard.showAddDriverModal()">
                         <i class="bi bi-plus-circle"></i> Add New Driver
@@ -481,40 +490,68 @@ class AdminDashboard {
                     <button class="btn btn-outline-primary" onclick="adminDashboard.exportDrivers()">
                         <i class="bi bi-download"></i> Export Data
                     </button>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-funnel"></i> Filter by Status
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="adminDashboard.filterDrivers('all')">All Drivers</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="adminDashboard.filterDrivers('available')">Available</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="adminDashboard.filterDrivers('busy')">Busy</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="adminDashboard.filterDrivers('offline')">Offline</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="adminDashboard.filterDrivers('on_break')">On Break</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="adminDashboard.filterDrivers('suspended')">Suspended</a></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
 
-            <div class="row">
+            <div class="row" id="driversContainer">
                 ${Array.isArray(drivers) ? drivers.map(driver => `
-                    <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="col-md-6 col-lg-4 mb-3 driver-card" data-status="${driver.status}">
                         <div class="stat-card">
                             <div class="d-flex justify-content-between align-items-start mb-3">
                                 <div>
                                     <h6 class="mb-1">${driver.first_name} ${driver.last_name}</h6>
                                     <small class="text-muted">${driver.phone}</small>
                                 </div>
-                                <span class="badge bg-${this.getDriverStatusColor(driver.status)}">${driver.status}</span>
+                                <span class="badge bg-${this.getDriverStatusColor(driver.status)}">${this.formatStatus(driver.status)}</span>
                             </div>
                             <div class="mb-2">
                                 <small class="text-muted">Vehicle:</small>
-                                <div>${driver.vehicle_type} - ${driver.vehicle_plate}</div>
+                                <div>${this.formatStatus(driver.vehicle_type)} - ${driver.vehicle_plate}</div>
                             </div>
                             <div class="mb-2">
-                                <small class="text-muted">Current Orders:</small>
-                                <div>${driver.current_orders || 0}</div>
+                                <small class="text-muted">License:</small>
+                                <div>${driver.driver_license || 'N/A'}</div>
+                            </div>
+                            <div class="mb-2">
+                                <small class="text-muted">Total Deliveries:</small>
+                                <div>${driver.total_deliveries || 0}</div>
                             </div>
                             <div class="mb-3">
                                 <small class="text-muted">Rating:</small>
-                                <div>${'★'.repeat(Math.floor(driver.rating || 5))} ${driver.rating || 5.0}/5</div>
+                                <div>${'★'.repeat(Math.floor(parseFloat(driver.rating) || 5))} ${(parseFloat(driver.rating) || 5.0).toFixed(1)}/5 (${driver.rating_count || 0} reviews)</div>
                             </div>
                             <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                                 <button class="btn btn-sm btn-outline-primary" onclick="adminDashboard.viewDriverDetails('${driver.id}')">
-                                    View Details
+                                    <i class="bi bi-eye"></i> View
                                 </button>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="adminDashboard.editDriver('${driver.id}')">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
+                                ${driver.status !== 'suspended' ? 
+                                    `<button class="btn btn-sm btn-outline-warning" onclick="adminDashboard.toggleDriverStatus('${driver.id}', 'suspended')">
+                                        <i class="bi bi-pause"></i> Suspend
+                                    </button>` :
+                                    `<button class="btn btn-sm btn-outline-success" onclick="adminDashboard.toggleDriverStatus('${driver.id}', 'available')">
+                                        <i class="bi bi-play"></i> Activate
+                                    </button>`
+                                }
                             </div>
                         </div>
                     </div>
-                `).join('') : '<div class="col-12"><div class="alert alert-info">No drivers available</div></div>'}
+                `).join('') : '<div class="col-12"><div class="alert alert-info">No drivers found</div></div>'}
             </div>
         `;
 
@@ -527,10 +564,10 @@ class AdminDashboard {
             return;
         }
 
-        const response = await this.apiRequest('/api/drivers/available', {}, true);
+        const response = await this.apiRequest('/api/drivers?available_only=true', {}, true);
         if (!response) return;
 
-        const drivers = response.data?.available_drivers || response.available_drivers || response || [];
+        const drivers = response.data?.drivers || response.drivers || response || [];
 
         // Populate driver select
         const driverSelect = document.getElementById('driverSelect');
@@ -594,10 +631,10 @@ class AdminDashboard {
     }
 
     async openEmergencyModal(orderId) {
-        const response = await this.apiRequest('/api/drivers/available', {}, true);
+        const response = await this.apiRequest('/api/drivers?available_only=true', {}, true);
         if (!response) return;
 
-        const drivers = response.data?.available_drivers || response.available_drivers || response || [];
+        const drivers = response.data?.drivers || response.drivers || response || [];
 
         // Populate driver select
         const emergencyDriverSelect = document.getElementById('emergencyDriverSelect');
@@ -764,7 +801,7 @@ class AdminDashboard {
         const clients = await this.apiRequest('/clients');
         if (!clients) return;
 
-        const clientsArray = clients.data?.clients || clients.clients || clients || [];
+        const clientsArray = clients.data?.clients || clients.clients || clients.data || clients || [];
 
         const content = `
             <div class="page-header">
@@ -809,18 +846,22 @@ class AdminDashboard {
                         <div class="stat-card">
                             <div class="d-flex justify-content-between align-items-start mb-3">
                                 <div>
-                                    <h6 class="mb-1">${client.company_name || client.first_name + ' ' + client.last_name}</h6>
-                                    <small class="text-muted">${client.email}</small>
+                                    <h6 class="mb-1">${client.company_name || (client.first_name + ' ' + client.last_name)}</h6>
+                                    <small class="text-muted">${client.contact_email || client.email || 'No email'}</small>
                                 </div>
                                 <span class="badge bg-${client.status === 'active' ? 'success' : client.status === 'inactive' ? 'secondary' : 'danger'}">${client.status || 'active'}</span>
                             </div>
                             <div class="mb-2">
                                 <small class="text-muted">Contact:</small>
-                                <div>${client.phone || 'N/A'}</div>
+                                <div>${client.contact_phone || client.phone || 'N/A'}</div>
                             </div>
                             <div class="mb-2">
                                 <small class="text-muted">Address:</small>
-                                <div>${client.address || 'N/A'}</div>
+                                <div>${this.formatClientAddress(client)}</div>
+                            </div>
+                            <div class="mb-2">
+                                <small class="text-muted">Contact Person:</small>
+                                <div>${client.contact_person || 'N/A'}</div>
                             </div>
                             <div class="mb-3">
                                 <small class="text-muted">Total Orders:</small>
@@ -1015,7 +1056,201 @@ class AdminDashboard {
     }
 
     async viewAssignmentDetails(assignmentId) {
-        this.showAlert(`Viewing assignment details for ID: ${assignmentId}`, 'info');
+        try {
+            // Show the modal first
+            const modal = new bootstrap.Modal(document.getElementById('assignmentDetailsModal') || this.createAssignmentDetailsModal());
+            modal.show();
+            
+            // Reset content to loading state
+            const content = document.getElementById('assignmentDetailsContent');
+            content.innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            `;
+            
+            // Fetch assignment details
+            const response = await this.apiRequest(`/assignments/${assignmentId}`);
+            
+            if (response && response.success) {
+                const assignment = response.data.assignment;
+                
+                content.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-3">Assignment Information</h6>
+                            <div class="mb-2">
+                                <strong>Assignment ID:</strong> #${assignment.id}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Status:</strong> <span class="badge bg-${this.getStatusColor(assignment.status)}">${this.formatStatus(assignment.status)}</span>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Assigned Date:</strong> ${this.formatDateTime(assignment.assigned_at)}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Accepted Date:</strong> ${assignment.accepted_at ? this.formatDateTime(assignment.accepted_at) : 'N/A'}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Started Date:</strong> ${assignment.started_at ? this.formatDateTime(assignment.started_at) : 'N/A'}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Completed Date:</strong> ${assignment.completed_at ? this.formatDateTime(assignment.completed_at) : 'N/A'}
+                            </div>
+                            ${assignment.assignment_notes ? `
+                            <div class="mb-2">
+                                <strong>Assignment Notes:</strong><br>
+                                <small class="text-muted">${assignment.assignment_notes}</small>
+                            </div>
+                            ` : ''}
+                            ${assignment.admin_notes ? `
+                            <div class="mb-2">
+                                <strong>Admin Notes:</strong><br>
+                                <small class="text-muted">${assignment.admin_notes}</small>
+                            </div>
+                            ` : ''}
+                            ${assignment.driver_notes ? `
+                            <div class="mb-2">
+                                <strong>Driver Notes:</strong><br>
+                                <small class="text-muted">${assignment.driver_notes}</small>
+                            </div>
+                            ` : ''}
+                            
+                            <h6 class="fw-bold mb-3 mt-4">Driver Information</h6>
+                            <div class="mb-2">
+                                <strong>Driver:</strong> ${assignment.driver_name || 'N/A'}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Email:</strong> ${assignment.driver_email || 'N/A'}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Phone:</strong> ${assignment.driver_phone || 'N/A'}
+                            </div>
+                            <div class="mb-2">
+                                <strong>License Number:</strong> ${assignment.driver_license || 'N/A'}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Vehicle:</strong> ${assignment.vehicle_type ? `${this.formatStatus(assignment.vehicle_type)} ${assignment.vehicle_model ? `(${assignment.vehicle_model})` : ''} - ${assignment.vehicle_plate || 'N/A'}` : 'N/A'}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Vehicle Capacity:</strong> ${assignment.vehicle_capacity_kg ? `${assignment.vehicle_capacity_kg} kg` : 'N/A'}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-3">Order Information</h6>
+                            <div class="mb-2">
+                                <strong>Order ID:</strong> #${assignment.order_id}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Tracking Number:</strong> ${assignment.tracking_number || 'N/A'}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Order Status:</strong> <span class="badge bg-${this.getStatusColor(assignment.order_status)}">${this.formatStatus(assignment.order_status)}</span>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Priority:</strong> <span class="badge bg-${this.getPriorityColor(assignment.priority)}">${this.formatStatus(assignment.priority)}</span>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Created:</strong> ${this.formatDateTime(assignment.order_created_at)}
+                            </div>
+                            
+                            <h6 class="fw-bold mb-3 mt-4">Client Information</h6>
+                            <div class="mb-2">
+                                <strong>Client:</strong> ${assignment.client_name || 'N/A'}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Company:</strong> ${assignment.company_name || 'N/A'}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Email:</strong> ${assignment.client_email || 'N/A'}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Phone:</strong> ${assignment.client_phone || 'N/A'}
+                            </div>
+                            
+                            <h6 class="fw-bold mb-3 mt-4">Delivery Details</h6>
+                            <div class="mb-2">
+                                <strong>Pickup Address:</strong><br>
+                                <small class="text-muted">${assignment.pickup_address || 'N/A'}</small>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Delivery Address:</strong><br>
+                                <small class="text-muted">${assignment.delivery_address || 'N/A'}</small>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Recipient:</strong> ${assignment.recipient_name || 'N/A'}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Recipient Phone:</strong> ${assignment.recipient_phone || 'N/A'}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Estimated Pickup:</strong> ${assignment.estimated_pickup_time ? this.formatDateTime(assignment.estimated_pickup_time) : 'N/A'}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Actual Pickup:</strong> ${assignment.actual_pickup_time ? this.formatDateTime(assignment.actual_pickup_time) : 'N/A'}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Estimated Delivery:</strong> ${assignment.estimated_delivery_time ? this.formatDateTime(assignment.estimated_delivery_time) : (assignment.order_estimated_delivery ? this.formatDateTime(assignment.order_estimated_delivery) : 'N/A')}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Actual Delivery:</strong> ${assignment.actual_delivery_time ? this.formatDateTime(assignment.actual_delivery_time) : 'N/A'}
+                            </div>
+                            ${assignment.special_instructions ? `
+                            <div class="mb-2">
+                                <strong>Special Instructions:</strong><br>
+                                <small class="text-muted">${assignment.special_instructions}</small>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+                
+            } else {
+                throw new Error('Failed to fetch assignment details');
+            }
+        } catch (error) {
+            console.error('Error loading assignment details:', error);
+            const content = document.getElementById('assignmentDetailsContent');
+            if (content) {
+                content.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Failed to load assignment details. Please try again.
+                    </div>
+                `;
+            }
+        }
+    }
+
+    createAssignmentDetailsModal() {
+        const modalHtml = `
+            <div class="modal fade" id="assignmentDetailsModal" tabindex="-1" aria-labelledby="assignmentDetailsModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="assignmentDetailsModalLabel">
+                                <i class="bi bi-clipboard-data"></i> Assignment Details
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div id="assignmentDetailsContent">
+                                <!-- Content will be loaded here -->
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        return document.getElementById('assignmentDetailsModal');
     }
 
     async cancelAssignment(assignmentId) {
@@ -1043,11 +1278,174 @@ class AdminDashboard {
     }
 
     async viewClientDetails(clientId) {
-        this.showAlert(`Viewing client details for ID: ${clientId}`, 'info');
+        try {
+            // Show the modal first
+            const modal = new bootstrap.Modal(document.getElementById('clientDetailsModal') || this.createClientDetailsModal());
+            modal.show();
+            
+            // Reset content to loading state
+            const content = document.getElementById('clientDetailsContent');
+            content.innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            `;
+            
+            // Fetch client details
+            const response = await this.apiRequest(`/clients/${clientId}`);
+            
+            if (response && response.success) {
+                const client = response.data.client;
+                
+                content.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-3">Company Information</h6>
+                            <div class="mb-2">
+                                <strong>Company Name:</strong> ${client.company_name || 'N/A'}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Registration Number:</strong> ${client.company_registration_number || 'N/A'}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Tax ID:</strong> ${client.tax_id || 'N/A'}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Company Type:</strong> ${this.formatStatus(client.company_type)}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Industry:</strong> ${client.industry || 'N/A'}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Website:</strong> ${client.website ? `<a href="${client.website}" target="_blank">${client.website}</a>` : 'N/A'}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-3">Contact Information</h6>
+                            <div class="mb-2">
+                                <strong>Contact Person:</strong> ${client.contact_person || 'N/A'}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Email:</strong> ${client.contact_email || 'N/A'}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Phone:</strong> ${client.contact_phone || 'N/A'}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Status:</strong> 
+                                <span class="badge bg-${client.status === 'active' ? 'success' : client.status === 'inactive' ? 'secondary' : 'danger'}">${this.formatStatus(client.status)}</span>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Preferred Communication:</strong> ${this.formatStatus(client.preferred_communication)}
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-3">Address</h6>
+                            <div class="mb-2">
+                                <strong>Address:</strong><br>
+                                ${this.formatClientAddress(client)}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Country:</strong> ${client.country || 'N/A'}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-3">Business Details</h6>
+                            <div class="mb-2">
+                                <strong>Contract Type:</strong> ${this.formatStatus(client.contract_type)}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Credit Limit:</strong> ${client.currency || 'LKR'} ${this.formatNumber(client.credit_limit)}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Current Balance:</strong> ${client.currency || 'LKR'} ${this.formatNumber(client.current_balance)}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Payment Terms:</strong> ${client.payment_terms || 30} days
+                            </div>
+                            <div class="mb-2">
+                                <strong>Created:</strong> ${client.created_at ? new Date(client.created_at).toLocaleDateString() : 'Unknown'}
+                            </div>
+                        </div>
+                    </div>
+                    ${client.special_requirements ? `
+                    <hr>
+                    <div class="row">
+                        <div class="col-12">
+                            <h6 class="fw-bold mb-3">Special Requirements</h6>
+                            <p class="text-muted">${client.special_requirements}</p>
+                        </div>
+                    </div>
+                    ` : ''}
+                `;
+                
+            } else {
+                throw new Error('Failed to fetch client details');
+            }
+        } catch (error) {
+            console.error('Error loading client details:', error);
+            const content = document.getElementById('clientDetailsContent');
+            if (content) {
+                content.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Failed to load client details. Please try again.
+                    </div>
+                `;
+            }
+        }
+    }
+
+    createClientDetailsModal() {
+        // Check if modal already exists
+        let modal = document.getElementById('clientDetailsModal');
+        if (modal) return modal;
+
+        // Create the modal HTML
+        const modalHTML = `
+            <div class="modal fade" id="clientDetailsModal" tabindex="-1" aria-labelledby="clientDetailsModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="clientDetailsModalLabel">Client Details</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body" id="clientDetailsContent">
+                            <div class="text-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-primary" id="editClientModalBtn">Edit Client</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Add modal to the document
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        return document.getElementById('clientDetailsModal');
     }
 
     async editClient(clientId) {
-        this.showAlert(`Edit client functionality for ID: ${clientId}`, 'info');
+        // For now, show an informative message about edit functionality
+        this.showAlert(`Edit client functionality is not yet implemented. Client ID: ${clientId}. This would open an edit form with the client's current information for modification.`, 'info');
+        
+        // TODO: Implement client editing functionality
+        // This should:
+        // 1. Fetch current client data
+        // 2. Open an edit modal with a form
+        // 3. Allow updating client information
+        // 4. Submit changes to the API
     }
 
     async saveGeneralSettings() {
@@ -1294,6 +1692,45 @@ class AdminDashboard {
         this.showAlert('Driver data export functionality would be implemented here', 'info');
     }
 
+    processDashboardData(data) {
+        const statusCounts = data.status_counts || [];
+        const todayMetrics = data.today_metrics || {};
+        const driverStats = data.driver_stats || [];
+
+        // Calculate totals from status counts
+        let totalOrders = 0;
+        let pendingOrders = 0;
+        let inTransitOrders = 0;
+
+        statusCounts.forEach(status => {
+            const count = parseInt(status.count) || 0;
+            totalOrders += count;
+            
+            if (status.status === 'pending') {
+                pendingOrders = count;
+            } else if (['pickup_scheduled', 'picked_up', 'in_transit', 'out_for_delivery'].includes(status.status)) {
+                inTransitOrders += count;
+            }
+        });
+
+        // Calculate available drivers
+        let activeDrivers = 0;
+        driverStats.forEach(driver => {
+            if (driver.status === 'available') {
+                activeDrivers += parseInt(driver.count) || 0;
+            }
+        });
+
+        return {
+            totalOrders: totalOrders || parseInt(todayMetrics.total_orders) || 0,
+            pendingOrders: pendingOrders,
+            activeDrivers: activeDrivers,
+            inTransitOrders: inTransitOrders,
+            deliveredToday: parseInt(todayMetrics.delivered_orders) || 0,
+            failedToday: parseInt(todayMetrics.failed_orders) || 0
+        };
+    }
+
     // Utility methods
     formatStatus(status) {
         if (!status) return 'Unknown';
@@ -1307,6 +1744,104 @@ class AdminDashboard {
 
     formatNumber(num) {
         return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2 }).format(num || 0);
+    }
+
+    getStatusColor(status) {
+        const statusColors = {
+            // Order statuses
+            'pending': 'warning',
+            'processing': 'info',
+            'pickup_scheduled': 'primary',
+            'picked_up': 'info',
+            'in_transit': 'primary',
+            'out_for_delivery': 'info',
+            'delivered': 'success',
+            'failed': 'danger',
+            'cancelled': 'secondary',
+            'returned': 'warning',
+            
+            // Assignment statuses
+            'accepted': 'success',
+            'rejected': 'danger',
+            'completed': 'success',
+            
+            // Driver statuses
+            'available': 'success',
+            'busy': 'warning',
+            'offline': 'secondary',
+            'on_break': 'info',
+            'suspended': 'danger',
+            
+            // Client statuses
+            'active': 'success',
+            'inactive': 'secondary',
+            'suspended': 'danger'
+        };
+        return statusColors[status?.toLowerCase()] || 'secondary';
+    }
+
+    formatDateTime(dateString) {
+        if (!dateString) return 'N/A';
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            });
+        } catch (error) {
+            return 'Invalid Date';
+        }
+    }
+
+    getDriverStatusColor(status) {
+        const colors = {
+            'available': 'success',
+            'busy': 'warning', 
+            'offline': 'secondary',
+            'on_break': 'info',
+            'suspended': 'danger'
+        };
+        return colors[status] || 'secondary';
+    }
+
+    filterDrivers(status) {
+        const driverCards = document.querySelectorAll('.driver-card');
+        driverCards.forEach(card => {
+            if (status === 'all' || card.dataset.status === status) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    async toggleDriverStatus(driverId, newStatus) {
+        if (confirm(`Are you sure you want to change this driver's status to ${newStatus}?`)) {
+            try {
+                const response = await this.apiRequest(`/api/drivers/${driverId}/status`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ status: newStatus })
+                }, true); // Use drivers API
+                
+                if (response && response.success) {
+                    this.showAlert(`Driver status updated to ${this.formatStatus(newStatus)}`, 'success');
+                    await this.loadDriverManagement(); // Reload the driver list
+                } else {
+                    this.showAlert('Failed to update driver status', 'error');
+                }
+            } catch (error) {
+                console.error('Error updating driver status:', error);
+                this.showAlert('Error updating driver status', 'error');
+            }
+        }
+    }
+
+    async editDriver(driverId) {
+        this.showAlert(`Edit driver functionality for ID: ${driverId} - To be implemented`, 'info');
     }
 
     formatDate(dateString) {
@@ -1386,6 +1921,29 @@ class AdminDashboard {
         return workingDays.map(day => 
             `<span class="badge bg-light text-dark me-1">${dayAbbrevs[day] || day}</span>`
         ).join('');
+    }
+
+    getPriorityColor(priority) {
+        const priorityColors = {
+            'low': 'secondary',
+            'medium': 'primary',
+            'high': 'warning',
+            'urgent': 'danger'
+        };
+        return priorityColors[priority?.toLowerCase()] || 'secondary';
+    }
+
+    formatClientAddress(client) {
+        if (!client) return 'N/A';
+        
+        const addressParts = [];
+        if (client.address_line1) addressParts.push(client.address_line1);
+        if (client.address_line2) addressParts.push(client.address_line2);
+        if (client.city) addressParts.push(client.city);
+        if (client.state_province) addressParts.push(client.state_province);
+        if (client.postal_code) addressParts.push(client.postal_code);
+        
+        return addressParts.length > 0 ? addressParts.join(', ') : 'N/A';
     }
 }
 
