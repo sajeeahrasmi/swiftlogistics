@@ -9,24 +9,29 @@
     "test": "jest"
   },
   "dependencies": {
-    "express": "^4.18.2",
+    "bcrypt": "^6.0.0",
     "bcryptjs": "^2.4.3",
-    "jsonwebtoken": "^9.0.2",
-    "pg": "^8.11.3",
-    "joi": "^17.9.2",
     "cors": "^2.8.5",
-    "helmet": "^7.0.0",
-    "express-rate-limit": "^6.8.1",
     "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^6.8.1",
+    "helmet": "^7.0.0",
+    "joi": "^17.9.2",
+    "jsonwebtoken": "^9.0.2",
     "kafkajs": "^2.2.4",
+    "pg": "^8.11.3",
     "winston": "^3.10.0"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1",
     "jest": "^29.6.1",
+    "nodemon": "^3.0.1",
     "supertest": "^6.3.3"
   },
-  "keywords": ["auth", "microservice", "jwt"],
+  "keywords": [
+    "auth",
+    "microservice",
+    "jwt"
+  ],
   "author": "SwiftLogistics Team",
   "license": "MIT"
 }

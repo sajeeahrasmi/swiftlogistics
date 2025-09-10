@@ -9,6 +9,8 @@ const rateLimit = require('express-rate-limit');
 const { testConnection, logger } = require('./database/connection');
 const orderRoutes = require('./routes/order');
 const clientRoutes = require('./routes/client');
+const driverRoutes = require('./routes/driver');
+const adminRoutes = require('./routes/admin');
 const { connectProducer, isConnected: isKafkaConnected } = require('./kafka/producer');
 const { startConsumer } = require('./kafka/consumer');
 const { isHealthy: isEventBusHealthy } = require('./eventBus');
@@ -195,6 +197,8 @@ app.get('/health', async (req, res) => {
 // API routes
 app.use('/api/orders', orderRoutes);
 app.use('/api/clients', clientRoutes);
+app.use('/api/drivers', driverRoutes);
+app.use('/api/admin', adminRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
@@ -267,7 +271,7 @@ const startServer = async () => {
   try {
     await initializeServices();
     
-    const server = app.listen(PORT, () => {
+    const server = app.listen(PORT, '0.0.0.0', () => {
       logger.info(`Order service running on port ${PORT}`);
       logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
       logger.info(`Health check: http://localhost:${PORT}/health`);

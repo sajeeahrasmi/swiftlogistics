@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SwiftLogistics Admin Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            width: 100%;
+            max-width: 400px;
+            padding: 2rem;
+        }
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .login-header h1 {
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .login-header p {
+            color: #666;
+            margin: 0;
+        }
+        .form-floating label {
+            color: #666;
+        }
+        .form-control {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .btn-login {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        .alert {
+            border-radius: 10px;
+            border: none;
+        }
+        .loading {
+            display: none;
+        }
+        .logo {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            color: white;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <div class="logo">
+                <i class="bi bi-truck"></i>
+            </div>
+            <h1>SwiftLogistics</h1>
+            <p>Admin Dashboard Login</p>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <form id="loginForm">
+            <div class="form-floating mb-3">
+                <input type="email" class="form-control" id="email" placeholder="name@example.com" required>
+                <label for="email">Email address</label>
+            </div>
+            <div class="form-floating mb-3">
+                <input type="password" class="form-control" id="password" placeholder="Password" required>
+                <label for="password">Password</label>
+            </div>
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="rememberMe">
+                <label class="form-check-label" for="rememberMe">
+                    Remember me
+                </label>
+            </div>
+            <button type="submit" class="btn btn-primary btn-login w-100">
+                <span class="btn-text">Sign In</span>
+                <span class="loading">
+                    <i class="bi bi-arrow-clockwise spin"></i> Signing in...
+                </span>
+            </button>
+        </form>
+
+        <div class="text-center mt-3">
+            <small class="text-muted">
+                Don't have an account? Contact your system administrator.
+            </small>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        class LoginManager {
+            constructor() {
+                this.authBaseUrl = 'http://localhost:3001/api/auth';
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.checkExistingToken();
+            }
+
+            setupEventListeners() {
+                document.getElementById('loginForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.handleLogin();
+                });
+            }
+
+            checkExistingToken() {
+                const token = localStorage.getItem('adminToken');
+                const userInfo = localStorage.getItem('adminUserInfo');
+                
+                if (token && userInfo) {
+                    try {
+                        const user = JSON.parse(userInfo);
+                        if (user.role === 'admin') {
+                            // Redirect to dashboard
+                            window.location.href = '/index.html';
+                            return;
+                        }
+                    } catch (error) {
+                        // Clear invalid data
+                        localStorage.removeItem('adminToken');
+                        localStorage.removeItem('adminUserInfo');
+                    }
+                }
+            }
+
+            async handleLogin() {
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const rememberMe = document.getElementById('rememberMe').checked;
+
+                if (!email || !password) {
+                    this.showAlert('Please fill in all fields', 'warning');
+                    return;
+                }
+
+                this.setLoading(true);
+
+                try {
+                    const response = await fetch(`${this.authBaseUrl}/login`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ email, password })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        // Check if user is admin
+                        const user = result.data?.user || result.user;
+                        const token = result.data?.tokens?.access_token || result.token;
+                        
+                        if (user.role !== 'admin') {
+                            this.showAlert('Access denied. Admin privileges required.', 'danger');
+                            return;
+                        }
+
+                        // Store auth data
+                        const storage = rememberMe ? localStorage : sessionStorage;
+                        storage.setItem('adminToken', token);
+                        storage.setItem('adminUserInfo', JSON.stringify(user));
+
+                        this.showAlert('Login successful! Redirecting...', 'success');
+                        
+                        // Redirect to dashboard after short delay
+                        setTimeout(() => {
+                            window.location.href = '/index.html';
+                        }, 1500);
+                    } else {
+                        this.showAlert(result.message || 'Login failed', 'danger');
+                    }
+                } catch (error) {
+                    console.error('Login error:', error);
+                    this.showAlert('Connection error. Please try again.', 'danger');
+                } finally {
+                    this.setLoading(false);
+                }
+            }
+
+            setLoading(loading) {
+                const btnText = document.querySelector('.btn-text');
+                const loadingSpan = document.querySelector('.loading');
+                const submitBtn = document.querySelector('.btn-login');
+
+                if (loading) {
+                    btnText.style.display = 'none';
+                    loadingSpan.style.display = 'inline';
+                    submitBtn.disabled = true;
+                } else {
+                    btnText.style.display = 'inline';
+                    loadingSpan.style.display = 'none';
+                    submitBtn.disabled = false;
+                }
+            }
+
+            showAlert(message, type = 'info') {
+                const alertContainer = document.getElementById('alertContainer');
+                const alertId = 'alert-' + Date.now();
+                
+                const alertHTML = `
+                    <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
+                        <i class="bi bi-${this.getAlertIcon(type)} me-2"></i>
+                        ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+                
+                alertContainer.innerHTML = alertHTML;
+                
+                // Auto-dismiss after 5 seconds
+                setTimeout(() => {
+                    const alert = document.getElementById(alertId);
+                    if (alert) {
+                        const bsAlert = new bootstrap.Alert(alert);
+                        bsAlert.close();
+                    }
+                }, 5000);
+            }
+
+            getAlertIcon(type) {
+                const icons = {
+                    'success': 'check-circle',
+                    'danger': 'exclamation-triangle',
+                    'warning': 'exclamation-triangle',
+                    'info': 'info-circle'
+                };
+                return icons[type] || 'info-circle';
+            }
+        }
+
+        // Add spinning animation for loading
+        const style = document.createElement('style');
+        style.textContent = `
+            .spin {
+                animation: spin 1s linear infinite;
+            }
+            @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Initialize login manager
+        document.addEventListener('DOMContentLoaded', () => {
+            new LoginManager();
+        });
+    </script>
+</body>
+</html>
