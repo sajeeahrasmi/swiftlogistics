@@ -23,7 +23,7 @@ const dbConfig = {
   user: process.env.DB_USER || 'postgres',
   host: process.env.DB_HOST || 'localhost',
   database: process.env.DB_NAME || 'swiftlogistics',
-  password: process.env.DB_PASSWORD || 'password',
+  password: process.env.DB_PASSWORD || '#@123Middle',
   port: process.env.DB_PORT || 5432,
   max: 20,
   idleTimeoutMillis: 30000,
