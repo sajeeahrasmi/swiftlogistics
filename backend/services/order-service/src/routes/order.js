@@ -1,5 +1,6 @@
 const express = require('express');
 const { query } = require('../database/connection');
+const { assignOrderToDriver } = require('../controllers/driverController');
 
 const rateLimit = require('express-rate-limit');
 const { 
@@ -88,6 +89,7 @@ router.post('/:id/cancel', orderLimiter, authorizeRoles('client', 'admin', 'disp
 
 // Admin only endpoints
 router.post('/:id/retry', orderLimiter, authorizeRoles('admin'), retryOrderProcessing);
+router.post('/:id/assign-driver', orderLimiter, authorizeRoles('admin', 'dispatcher'), assignOrderToDriver);
 router.get('/admin/queue', orderLimiter, authorizeRoles('admin'), async (req, res) => {
   // This would be implemented later for admin order queue management
   res.json({
