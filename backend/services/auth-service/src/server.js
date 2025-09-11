@@ -118,6 +118,8 @@ app.get('/health', async (req, res) => {
 // API routes
 app.use('/api/auth', authRoutes);
 
+
+
 // 404 handler
 app.use('*', (req, res) => {
   res.status(404).json({
