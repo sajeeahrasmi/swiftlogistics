@@ -1,198 +1,561 @@
-// ==================== ADMIN DRIVERS EXTRA ====================
-export const addDriver = async (driverData: any) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({ success: true, driver: { id: Math.floor(Math.random() * 10000), ...driverData } });
-    }, 500);
-  });
-};
-
-export const updateDriver = async (id: number, driverData: any) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({ success: true, id, ...driverData });
-    }, 500);
-  });
-};
-
-export const deleteDriver = async (id: number) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({ success: true, id });
-    }, 500);
-  });
-};
-// src/api/index.ts
 import axios from "axios";
 
-// Base URL of your backend
-const API_BASE = "http://localhost:3001/api";
+// Base URLs for different services
+const AUTH_SERVICE_URL = "http://localhost:3010/api";
+const ORDER_SERVICE_URL = "http://localhost:3002/api";
+const TRACKING_SERVICE_URL = "http://localhost:3003/api";
 
-// Create an Axios instance
-const api = axios.create({
-  baseURL: API_BASE,
+// Create separate Axios instances for different services
+const authAPI = axios.create({
+  baseURL: AUTH_SERVICE_URL,
+  timeout: 10000,
+});
+
+const orderAPI = axios.create({
+  baseURL: ORDER_SERVICE_URL,
+  timeout: 10000,
+});
+
+const trackingAPI = axios.create({
+  baseURL: TRACKING_SERVICE_URL,
+  timeout: 10000,
 });
 
 // Add token automatically to all requests
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token && config.headers) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// ==================== AUTH ====================
-
-// src/api/index.ts
-export const loginUser = async (email: string, password: string) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      // Simple role simulation
-      const role = email.includes("admin") ? "admin" : "client";
-      resolve({ token: "mock-token", user: { email, role } });
-    }, 500);
+const addAuthInterceptor = (apiInstance: any) => {
+  apiInstance.interceptors.request.use((config: any) => {
+    const token = localStorage.getItem("token");
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
   });
+
+  // Handle token expiration
+  apiInstance.interceptors.response.use(
+    (response: any) => response,
+    (error: any) => {
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/login";
+      }
+      return Promise.reject(error);
+    }
+  );
 };
 
-// Signup user
+// Apply interceptors
+addAuthInterceptor(authAPI);
+addAuthInterceptor(orderAPI);
+addAuthInterceptor(trackingAPI);
+
+// ==================== AUTH ====================
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3010/api';
+
+// Cache for profile data to reduce API calls
+let profileCache: any = null;
+let profileCacheTime: number = 0;
+const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes cache for development
+
+// Rate limiting tracking
+let lastRequestTime = 0;
+const MIN_REQUEST_INTERVAL = 2000; // 2 seconds between requests for safety
+
+export const getProfile = async (skipCache: boolean = false) => {
+  try {
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    console.log('=== GET PROFILE DEBUG START ===');
+    console.log('Token from localStorage:', token ? 'present' : 'missing');
+    console.log('Token length:', token?.length);
+    console.log('Token starts with:', token?.substring(0, 20) + '...');
+
+    // Check cache first
+    const now = Date.now();
+    if (!skipCache && profileCache && (now - profileCacheTime) < CACHE_DURATION) {
+      console.log('Returning cached profile data');
+      return profileCache;
+    }
+
+    // Rate limiting check
+    const timeSinceLastRequest = now - lastRequestTime;
+    if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
+      const waitTime = MIN_REQUEST_INTERVAL - timeSinceLastRequest;
+      console.log(`Rate limiting: waiting ${waitTime}ms before next request`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+
+    console.log('Making request to:', `${API_BASE_URL}/auth/me`);
+    console.log('Request headers:', {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token ? '[PRESENT]' : '[MISSING]'}`
+    });
+
+    lastRequestTime = Date.now();
+
+    const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+    });
+
+    console.log('Response status:', response.status);
+    console.log('Response ok:', response.ok);
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
+    // Get response text first to handle both JSON and non-JSON responses
+    const responseText = await response.text();
+    console.log('Raw response:', responseText);
+
+    let data;
+    try {
+      data = responseText ? JSON.parse(responseText) : {};
+    } catch (parseError) {
+      console.error('Failed to parse response as JSON:', parseError);
+      throw new Error(`Invalid response format: ${response.status}`);
+    }
+
+    console.log('Parsed response data:', data);
+    console.log('=== GET PROFILE DEBUG END ===');
+
+    if (!response.ok) {
+      // Handle different HTTP status codes
+      let errorMessage = data.message || data.error || 'Unknown error occurred';
+      
+      switch (response.status) {
+        case 401:
+          errorMessage = 'Authentication failed. Please login again.';
+          localStorage.removeItem('token');
+          profileCache = null; // Clear cache
+          break;
+        case 403:
+          errorMessage = 'Access forbidden. Insufficient permissions.';
+          break;
+        case 404:
+          errorMessage = 'User profile not found.';
+          break;
+        case 429:
+          errorMessage = 'Too many requests. Please wait before trying again.';
+          // Don't clear cache for rate limiting
+          break;
+        case 500:
+          errorMessage = 'Server error. Please try again later.';
+          break;
+        case 502:
+        case 503:
+        case 504:
+          errorMessage = 'Service temporarily unavailable. Please try again later.';
+          break;
+        default:
+          errorMessage = `HTTP error ${response.status}: ${errorMessage}`;
+      }
+      
+      throw new Error(errorMessage);
+    }
+
+    // Cache successful response
+    profileCache = data;
+    profileCacheTime = now;
+
+    return data;
+  } catch (error: any) {
+    console.error('Get profile API error:', error);
+    
+    // Handle network errors
+    if (error instanceof TypeError || error.message.includes('fetch')) {
+      throw new Error('Network error. Please check your connection and try again.');
+    }
+    
+    // Re-throw the error with preserved message
+    throw error;
+  }
+};
+
+// Clear profile cache function
+export const clearProfileCache = () => {
+  profileCache = null;
+  profileCacheTime = 0;
+};
+
+export const loginUser = async (email: string, password: string) => {
+  try {
+    console.log('Attempting login to:', `${API_BASE_URL}/auth/login`);
+    
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        email: email.toLowerCase(), 
+        password 
+      }),
+    });
+
+    const responseText = await response.text();
+    let data;
+    
+    try {
+      data = responseText ? JSON.parse(responseText) : {};
+    } catch (parseError) {
+      throw new Error(`Invalid response format: ${response.status}`);
+    }
+
+    console.log('Login response:', data);
+
+    if (!response.ok) {
+      const errorMessage = data.message || data.error || `HTTP error! status: ${response.status}`;
+      throw new Error(errorMessage);
+    }
+
+    // Store the token if login is successful
+    if (data.success && data.token) {
+      localStorage.setItem('token', data.token);
+      console.log('Token stored successfully');
+    } else if (data.data?.tokens?.access_token) {
+      localStorage.setItem('token', data.data.tokens.access_token);
+      console.log('Token stored from data.tokens.access_token');
+    }
+
+    // Clear any existing profile cache on login
+    clearProfileCache();
+
+    return data;
+  } catch (error: any) {
+    console.error('Login API error:', error);
+    
+    if (error instanceof TypeError || error.message.includes('fetch')) {
+      throw new Error('Network error. Please check your connection and try again.');
+    }
+    
+    throw error;
+  }
+};
+
 export const signupUser = async (userData: any) => {
-  // Simulate successful signup
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({ success: true, user: userData });
-    }, 500);
-  });
+  try {
+    const response = await authAPI.post("/auth/register", userData);
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: "Signup failed" };
+  }
+};
+
+export const updateProfile = async (profileData: any) => {
+  try {
+    const response = await authAPI.put("/auth/profile", profileData);
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: "Failed to update profile" };
+  }
+};
+
+export const logoutUser = async () => {
+  try {
+    await authAPI.post("/auth/logout");
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    clearProfileCache(); // Clear cache on logout
+  } catch (error: any) {
+    // Even if logout fails, clear local storage and cache
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    clearProfileCache();
+  }
 };
 
 // ==================== ORDERS ====================
-
-// Get active orders
 export const getOrders = async () => {
-  const res = await api.get("/orders");
-  return res.data;
+  try {
+    const response = await orderAPI.get("/orders");
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: "Failed to get orders" };
+  }
 };
 
-// Submit a new order
 export const submitOrder = async (orderData: any) => {
-  const res = await api.post("/orders", orderData);
-  return res.data;
+  try {
+    const response = await orderAPI.post("/orders", orderData);
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: "Failed to create order" };
+  }
 };
 
-// Get order history
 export const getOrderHistory = async () => {
-  const res = await api.get("/orders/history");
-  return res.data;
+  try {
+    const response = await orderAPI.get("/orders/history");
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: "Failed to get order history" };
+  }
 };
 
-// ==================== PROFILE ====================
-
-// Get user profile
-export const getProfile = async () => {
-  const res = await api.get("/profile");
-  return res.data;
+export const getClientOrders = async () => {
+  try {
+    const response = await orderAPI.get("/orders/client/me/orders");
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: "Failed to get client orders" };
+  }
 };
 
-// Update user profile
-export const updateProfile = async (profileData: any) => {
-  const res = await api.put("/profile", profileData);
-  return res.data;
+export const updateOrderStatus = async (orderId: number, status: string, notes?: string) => {
+  try {
+    const response = await orderAPI.patch(`/orders/${orderId}/status`, { 
+      new_status: status,
+      notes 
+    });
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: "Failed to update order status" };
+  }
+};
+
+export const retryOrder = async (id: number) => {
+  try {
+    const response = await orderAPI.post(`/orders/${id}/retry`);
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: "Failed to retry order" };
+  }
 };
 
 // ==================== ADMIN ====================
-
-// Mock admin stats API
 export const getAdminStats = async () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        totalClients: 12,
-        totalOrders: 120,
-        ordersInWarehouse: 30,
-        outForDelivery: 50,
-        completed: 40,
-      });
-    }, 500);
-  });
+  try {
+    const response = await orderAPI.get("/admin/dashboard/stats");
+    return response.data;
+  } catch (error: any) {
+    // Fallback to mock data if backend not available
+    return {
+      totalClients: 12,
+      totalOrders: 120,
+      ordersInWarehouse: 30,
+      outForDelivery: 50,
+      completed: 40,
+    };
+  }
 };
 
 // ==================== ADMIN CLIENTS ====================
 export const getClients = async () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve([
-        { id: 1, company: "Acme Corp", contract: "2025-12-31", billing: "$1200" },
-        { id: 2, company: "Beta Ltd", contract: "2026-06-30", billing: "$900" },
-      ]);
-    }, 500);
-  });
+  try {
+    const response = await orderAPI.get("/admin/clients");
+    return response.data;
+  } catch (error: any) {
+    // Fallback to mock data
+    return [
+      { id: 1, company: "Acme Corp", contract: "2025-12-31", billing: "$1200" },
+      { id: 2, company: "Beta Ltd", contract: "2026-06-30", billing: "$900" },
+    ];
+  }
 };
 
-export const updateClient = async (id: number) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({ success: true, id });
-    }, 500);
-  });
+export const updateClient = async (id: number, clientData: any) => {
+  try {
+    const response = await orderAPI.put(`/admin/clients/${id}`, clientData);
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: "Failed to update client" };
+  }
 };
 
-// ==================== ADMIN ORDERS ====================
-export const retryOrder = async (id: number) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({ success: true, id });
-    }, 500);
-  });
+export const deleteClient = async (id: number) => {
+  try {
+    const response = await orderAPI.delete(`/admin/clients/${id}`);
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: "Failed to delete client" };
+  }
 };
 
 // ==================== ADMIN DRIVERS ====================
 export const getDrivers = async () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve([
-        { id: 1, name: "John Doe", route: "Colombo - Kandy" },
-        { id: 2, name: "Jane Smith", route: "Colombo - Galle" },
-      ]);
-    }, 500);
-  });
+  try {
+    const response = await orderAPI.get("/drivers");
+    return response.data;
+  } catch (error: any) {
+    // Fallback to mock data
+    return [
+      { id: 1, name: "John Doe", route: "Colombo - Kandy" },
+      { id: 2, name: "Jane Smith", route: "Colombo - Galle" },
+    ];
+  }
 };
 
-export const reassignRoute = async (driverId: number) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({ success: true, driverId });
-    }, 500);
-  });
+export const addDriver = async (driverData: any) => {
+  try {
+    const response = await orderAPI.post("/drivers/comprehensive", driverData);
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: "Failed to create driver" };
+  }
+};
+
+export const updateDriver = async (id: number, driverData: any) => {
+  try {
+    const response = await orderAPI.put(`/drivers/${id}`, driverData);
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: "Failed to update driver" };
+  }
+};
+
+export const deleteDriver = async (id: number) => {
+  try {
+    const response = await orderAPI.delete(`/drivers/${id}`);
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: "Failed to delete driver" };
+  }
+};
+
+export const reassignRoute = async (driverId: number, routeData: any) => {
+  try {
+    const response = await orderAPI.put(`/drivers/${driverId}/route`, routeData);
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: "Failed to reassign route" };
+  }
+};
+
+export const assignOrderToDriver = async (orderId: number, driverId: number, assignmentData: any) => {
+  try {
+    const response = await orderAPI.post(`/drivers/${driverId}/assign-order`, {
+      order_id: orderId,
+      ...assignmentData
+    });
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: "Failed to assign order" };
+  }
 };
 
 // ==================== ADMIN WAREHOUSE ====================
 export const getWarehousePackages = async () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve([
-        { id: 101, client: "Acme Corp", status: "Received" },
-        { id: 102, client: "Beta Ltd", status: "Stored" },
-      ]);
-    }, 500);
-  });
+  try {
+    const response = await orderAPI.get("/admin/warehouse/packages");
+    return response.data;
+  } catch (error: any) {
+    // Fallback to mock data
+    return [
+      { id: 101, client: "Acme Corp", status: "Received" },
+      { id: 102, client: "Beta Ltd", status: "Stored" },
+    ];
+  }
 };
 
 export const updatePackageStatus = async (id: number, status: string) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({ success: true, id, status });
-    }, 500);
-  });
+  try {
+    const response = await orderAPI.patch(`/admin/warehouse/packages/${id}`, { status });
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: "Failed to update package status" };
+  }
 };
 
 // ==================== ADMIN LOGS ====================
 export const getSystemLogs = async () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve([
-        { timestamp: "2025-09-10 10:00", message: "System started" },
-        { timestamp: "2025-09-10 10:05", message: "Order #101 processed" },
-      ]);
-    }, 500);
-  });
+  try {
+    const response = await orderAPI.get("/admin/logs");
+    return response.data;
+  } catch (error: any) {
+    // Fallback to mock data
+    return [
+      { timestamp: "2025-09-10 10:00", message: "System started" },
+      { timestamp: "2025-09-10 10:05", message: "Order #101 processed" },
+    ];
+  }
 };
+
+// ==================== TRACKING ====================
+export const trackOrder = async (trackingNumber: string) => {
+  try {
+    const response = await trackingAPI.get(`/tracking/${trackingNumber}`);
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: "Failed to track order" };
+  }
+};
+
+export const getOrderTracking = async (orderId: number) => {
+  try {
+    const response = await orderAPI.get(`/orders/${orderId}/tracking`);
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: "Failed to get order tracking" };
+  }
+};
+
+// ==================== CLIENT BILLING ====================
+export const getBillingInfo = async () => {
+  try {
+    const response = await orderAPI.get("/orders/client/me/billing");
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: "Failed to get billing info" };
+  }
+};
+
+export const getInvoices = async () => {
+  try {
+    const response = await orderAPI.get("/orders/client/me/invoices");
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: "Failed to get invoices" };
+  }
+};
+
+export const downloadInvoice = async (invoiceId: number) => {
+  try {
+    const response = await orderAPI.get(`/orders/client/me/invoices/${invoiceId}/download`, {
+      responseType: 'blob'
+    });
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: "Failed to download invoice" };
+  }
+};
+
+// ==================== UTILITY FUNCTIONS ====================
+export const uploadFile = async (file: File, endpoint: string) => {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await orderAPI.post(`/upload/${endpoint}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: "Failed to upload file" };
+  }
+};
+
+export const healthCheck = async () => {
+  try {
+    const authHealth = await authAPI.get("/health");
+    const orderHealth = await orderAPI.get("/health");
+    
+    return {
+      auth: authHealth.data,
+      order: orderHealth.data,
+    };
+  } catch (error: any) {
+    throw error.response?.data || { message: "Health check failed" };
+  }
+};
+
+// Export API instances for direct use if needed
+export { authAPI, orderAPI, trackingAPI };

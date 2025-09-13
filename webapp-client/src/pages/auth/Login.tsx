@@ -17,19 +17,48 @@ const Login: React.FC = () => {
     
     try {
       const data = await loginUser(email, password);
-      const token = (data as { token: string }).token;
-      const user = (data as { user: { email: string; role: string } }).user;
+      console.log('Login successful, response:', data);
+      
+      // Extract token and user info from response
+      let token: string = '';
+      let user: any = null;
+      
+      if (data.token) {
+        token = data.token;
+      } else if (data.data?.tokens?.access_token) {
+        token = data.data.tokens.access_token;
+      }
+      
+      if (data.user) {
+        user = data.user;
+      } else if (data.data?.user) {
+        user = data.data.user;
+      }
+      
+      if (!token) {
+        throw new Error('No token received from login response');
+      }
+      
+      if (!user) {
+        throw new Error('No user data received from login response');
+      }
+      
+      // Store token and user info
       localStorage.setItem("token", token);
       localStorage.setItem("role", user.role);
+      localStorage.setItem("userEmail", user.email);
+      
+      console.log('Token and user data stored, redirecting...');
+      
       // Redirect based on role
       if (user.role === "admin") {
         navigate("/admin/dashboard");
       } else {
         navigate("/client/dashboard");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Login failed", err);
-      alert("Login failed. Please check your credentials and try again.");
+      alert(`Login failed: ${err.message || 'Please check your credentials and try again.'}`);
     } finally {
       setIsLoading(false);
     }

@@ -29,6 +29,13 @@ const wmsAdapter = require('./adapters/wmsAdapter');
 const app = express();
 const PORT = process.env.ORDER_SERVICE_PORT || 3002;
 
+// Middleware
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://localhost:3001'], // Add your frontend URLs
+  credentials: true
+}));
+app.use(express.json());
+
 // Security middleware
 app.use(helmet({
   contentSecurityPolicy: {
@@ -45,17 +52,6 @@ app.use(helmet({
     preload: true
   }
 }));
-
-// CORS configuration
-const corsOptions = {
-  origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:3000'],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Client-ID'],
-  maxAge: 86400
-};
-
-app.use(cors(corsOptions));
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -317,3 +313,5 @@ process.on('unhandledRejection', (reason, promise) => {
 
 // Start the server
 startServer();
+
+module.exports = app;
