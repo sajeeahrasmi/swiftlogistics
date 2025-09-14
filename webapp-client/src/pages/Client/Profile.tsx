@@ -52,10 +52,12 @@ const Profile: React.FC = () => {
           <h2 className="text-2xl font-bold mb-6 text-amber-900">Edit Profile</h2>
           <form onSubmit={handleUpdate} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
               <input
+                id="firstName"
                 type="text"
                 name="firstName"
+                autoComplete="given-name"
                 value={form.firstName}
                 onChange={handleChange}
                 className="w-full p-3 border border-gray-300 rounded-lg"
@@ -63,10 +65,12 @@ const Profile: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
               <input
+                id="lastName"
                 type="text"
                 name="lastName"
+                autoComplete="family-name"
                 value={form.lastName}
                 onChange={handleChange}
                 className="w-full p-3 border border-gray-300 rounded-lg"
@@ -74,10 +78,12 @@ const Profile: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
               <input
+                id="email"
                 type="email"
                 name="email"
+                autoComplete="email"
                 value={form.email}
                 onChange={handleChange}
                 className="w-full p-3 border border-gray-300 rounded-lg"
@@ -86,10 +92,12 @@ const Profile: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Telephone Number</label>
+              <label htmlFor="telephone" className="block text-sm font-medium text-gray-700 mb-1">Telephone Number</label>
               <input
-                type="text"
+                id="telephone"
+                type="tel"
                 name="telephone"
+                autoComplete="tel"
                 value={form.telephone}
                 onChange={handleChange}
                 className="w-full p-3 border border-gray-300 rounded-lg"
@@ -97,10 +105,12 @@ const Profile: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+              <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">Address</label>
               <input
+                id="address"
                 type="text"
                 name="address"
+                autoComplete="street-address"
                 value={form.address}
                 onChange={handleChange}
                 className="w-full p-3 border border-gray-300 rounded-lg"
@@ -108,10 +118,12 @@ const Profile: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
               <input
+                id="password"
                 type="password"
                 name="password"
+                autoComplete="new-password"
                 value={form.password}
                 onChange={handleChange}
                 className="w-full p-3 border border-gray-300 rounded-lg"

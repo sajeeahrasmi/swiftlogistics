@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Base URLs for different services
 const AUTH_SERVICE_URL = "http://localhost:3010/api";
-const ORDER_SERVICE_URL = "http://localhost:3002/api";
+const ORDER_SERVICE_URL = "http://localhost:3011/api";
 const TRACKING_SERVICE_URL = "http://localhost:3003/api";
 
 // Create separate Axios instances for different services
@@ -330,6 +330,16 @@ export const retryOrder = async (id: number) => {
 };
 
 // ==================== ADMIN ====================
+export const getDashboardOverview = async () => {
+  try {
+    const response = await orderAPI.get("/admin/dashboard/overview");
+    return response.data;
+  } catch (error: any) {
+    console.error('Dashboard overview API error:', error);
+    throw error.response?.data || { message: "Failed to get dashboard overview" };
+  }
+};
+
 export const getAdminStats = async () => {
   try {
     const response = await orderAPI.get("/admin/dashboard/stats");

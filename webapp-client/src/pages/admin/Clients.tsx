@@ -191,9 +191,12 @@ const Clients: React.FC = () => {
               <div className="space-y-3">
                 {["company", "contactPerson", "email", "phone"].map((field) => (
                   <div key={field}>
-                    <label className="block text-sm font-medium text-gray-700 capitalize">{field.replace(/([A-Z])/g, ' $1')}</label>
+                    <label htmlFor={`new-${field}`} className="block text-sm font-medium text-gray-700 capitalize">{field.replace(/([A-Z])/g, ' $1')}</label>
                     <input
-                      type={field === "email" ? "email" : "text"}
+                      id={`new-${field}`}
+                      name={field}
+                      type={field === "email" ? "email" : field === "phone" ? "tel" : "text"}
+                      autoComplete={field === "email" ? "email" : field === "phone" ? "tel" : field === "company" ? "organization" : "name"}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md"
                       value={(newClient as any)[field]}
                       onChange={(e) => setNewClient({ ...newClient, [field]: e.target.value })}
@@ -201,8 +204,11 @@ const Clients: React.FC = () => {
                   </div>
                 ))}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Contract Type</label>
-                  <select className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  <label htmlFor="new-contract-type" className="block text-sm font-medium text-gray-700">Contract Type</label>
+                  <select 
+                    id="new-contract-type"
+                    name="contractType"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
                     value={newClient.contract}
                     onChange={(e) => setNewClient({ ...newClient, contract: e.target.value })}
                   >
@@ -212,8 +218,11 @@ const Clients: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Billing Cycle</label>
-                  <select className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  <label htmlFor="new-billing-cycle" className="block text-sm font-medium text-gray-700">Billing Cycle</label>
+                  <select 
+                    id="new-billing-cycle"
+                    name="billingCycle"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
                     value={newClient.billing}
                     onChange={(e) => setNewClient({ ...newClient, billing: e.target.value })}
                   >
@@ -223,17 +232,24 @@ const Clients: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Contract Value (LKR)</label>
+                  <label htmlFor="new-contract-value" className="block text-sm font-medium text-gray-700">Contract Value (LKR)</label>
                   <input
+                    id="new-contract-value"
+                    name="contractValue"
                     type="number"
+                    min="0"
+                    step="0.01"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
                     value={newClient.amount}
                     onChange={(e) => setNewClient({ ...newClient, amount: parseInt(e.target.value) || 0 })}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Status</label>
-                  <select className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  <label htmlFor="new-client-status" className="block text-sm font-medium text-gray-700">Status</label>
+                  <select 
+                    id="new-client-status"
+                    name="clientStatus"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
                     value={newClient.status}
                     onChange={(e) => setNewClient({ ...newClient, status: e.target.value })}
                   >
@@ -259,9 +275,12 @@ const Clients: React.FC = () => {
               <div className="space-y-3">
                 {["company", "contactPerson", "email", "phone"].map((field) => (
                   <div key={field}>
-                    <label className="block text-sm font-medium text-gray-700 capitalize">{field.replace(/([A-Z])/g, ' $1')}</label>
+                    <label htmlFor={`edit-${field}`} className="block text-sm font-medium text-gray-700 capitalize">{field.replace(/([A-Z])/g, ' $1')}</label>
                     <input
-                      type={field === "email" ? "email" : "text"}
+                      id={`edit-${field}`}
+                      name={field}
+                      type={field === "email" ? "email" : field === "phone" ? "tel" : "text"}
+                      autoComplete={field === "email" ? "email" : field === "phone" ? "tel" : field === "company" ? "organization" : "name"}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md"
                       value={(editingClient as any)[field]}
                       onChange={(e) => setEditingClient({ ...editingClient, [field]: e.target.value })}
@@ -269,8 +288,11 @@ const Clients: React.FC = () => {
                   </div>
                 ))}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Contract Type</label>
-                  <select className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  <label htmlFor="edit-contract-type" className="block text-sm font-medium text-gray-700">Contract Type</label>
+                  <select 
+                    id="edit-contract-type"
+                    name="contractType"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
                     value={editingClient.contract}
                     onChange={(e) => setEditingClient({ ...editingClient, contract: e.target.value })}
                   >
@@ -280,8 +302,11 @@ const Clients: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Billing Cycle</label>
-                  <select className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  <label htmlFor="edit-billing-cycle" className="block text-sm font-medium text-gray-700">Billing Cycle</label>
+                  <select 
+                    id="edit-billing-cycle"
+                    name="billingCycle"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
                     value={editingClient.billing}
                     onChange={(e) => setEditingClient({ ...editingClient, billing: e.target.value })}
                   >
@@ -291,17 +316,24 @@ const Clients: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Contract Value (LKR)</label>
+                  <label htmlFor="edit-contract-value" className="block text-sm font-medium text-gray-700">Contract Value (LKR)</label>
                   <input
+                    id="edit-contract-value"
+                    name="contractValue"
                     type="number"
+                    min="0"
+                    step="0.01"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
                     value={editingClient.amount}
                     onChange={(e) => setEditingClient({ ...editingClient, amount: parseInt(e.target.value) || 0 })}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Status</label>
-                  <select className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  <label htmlFor="edit-client-status" className="block text-sm font-medium text-gray-700">Status</label>
+                  <select 
+                    id="edit-client-status"
+                    name="clientStatus"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
                     value={editingClient.status}
                     onChange={(e) => setEditingClient({ ...editingClient, status: e.target.value })}
                   >

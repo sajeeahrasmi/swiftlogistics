@@ -31,7 +31,13 @@ const PORT = process.env.ORDER_SERVICE_PORT || 3002;
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001'], // Add your frontend URLs
+  origin: [
+    'http://localhost:3000', 
+    'http://localhost:3001',
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:5175'
+  ], // Add your frontend URLs
   credentials: true
 }));
 app.use(express.json());
@@ -314,4 +320,4 @@ process.on('unhandledRejection', (reason, promise) => {
 // Start the server
 startServer();
 
-module.exports = app;
+module.exports = app;// Restart trigger

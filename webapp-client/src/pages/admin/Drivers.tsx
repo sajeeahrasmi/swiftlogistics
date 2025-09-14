@@ -259,10 +259,12 @@ const Drivers: React.FC = () => {
                 </div>
                 <form onSubmit={handleSubmit} className="p-6">
                   <div className="mb-5">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <label htmlFor="driver-name" className="block text-sm font-medium text-gray-700 mb-1">Name</label>
                     <input
+                      id="driver-name"
                       type="text"
                       name="name"
+                      autoComplete="name"
                       value={formData.name}
                       onChange={handleInputChange}
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
@@ -270,10 +272,12 @@ const Drivers: React.FC = () => {
                     />
                   </div>
                   <div className="mb-5">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Telephone</label>
+                    <label htmlFor="driver-telephone" className="block text-sm font-medium text-gray-700 mb-1">Telephone</label>
                     <input
-                      type="text"
+                      id="driver-telephone"
+                      type="tel"
                       name="telephone"
+                      autoComplete="tel"
                       value={formData.telephone}
                       onChange={handleInputChange}
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
@@ -281,8 +285,9 @@ const Drivers: React.FC = () => {
                     />
                   </div>
                   <div className="mb-5">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Route</label>
+                    <label htmlFor="driver-route" className="block text-sm font-medium text-gray-700 mb-1">Route</label>
                     <input
+                      id="driver-route"
                       type="text"
                       name="route"
                       value={formData.route}
