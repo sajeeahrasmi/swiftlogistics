@@ -250,7 +250,24 @@ export const signupUser = async (userData: any) => {
 
 export const updateProfile = async (profileData: any) => {
   try {
-    const response = await authAPI.put("/auth/profile", profileData);
+    // Map frontend field names to backend field names
+    const mappedData: any = {};
+    
+    if (profileData.firstName !== undefined) {
+      mappedData.first_name = profileData.firstName;
+    }
+    if (profileData.lastName !== undefined) {
+      mappedData.last_name = profileData.lastName;
+    }
+    if (profileData.telephone !== undefined) {
+      mappedData.phone = profileData.telephone;
+    }
+    
+    // Note: address and password are not handled by the current backend profile update endpoint
+    // password would need a separate change password endpoint
+    // address field would need to be added to the database schema
+    
+    const response = await authAPI.put("/auth/profile", mappedData);
     return response.data;
   } catch (error: any) {
     throw error.response?.data || { message: "Failed to update profile" };
@@ -509,18 +526,34 @@ export const getOrderTracking = async (orderId: number) => {
 // ==================== CLIENT BILLING ====================
 export const getBillingInfo = async () => {
   try {
+    console.log('🔍 getBillingInfo: Making request to /orders/client/me/billing');
+    console.log('🔍 Token available:', localStorage.getItem('token') ? 'YES' : 'NO');
+    console.log('🔍 Order API base URL:', orderAPI.defaults.baseURL);
+    
     const response = await orderAPI.get("/orders/client/me/billing");
+    console.log('✅ getBillingInfo: Success!', response.data);
     return response.data;
   } catch (error: any) {
+    console.error('❌ getBillingInfo: Error occurred', error);
+    console.error('❌ Error response:', error.response?.data);
+    console.error('❌ Error status:', error.response?.status);
     throw error.response?.data || { message: "Failed to get billing info" };
   }
 };
 
 export const getInvoices = async () => {
   try {
+    console.log('🔍 getInvoices: Making request to /orders/client/me/invoices');
+    console.log('🔍 Token available:', localStorage.getItem('token') ? 'YES' : 'NO');
+    console.log('🔍 Order API base URL:', orderAPI.defaults.baseURL);
+    
     const response = await orderAPI.get("/orders/client/me/invoices");
+    console.log('✅ getInvoices: Success!', response.data);
     return response.data;
   } catch (error: any) {
+    console.error('❌ getInvoices: Error occurred', error);
+    console.error('❌ Error response:', error.response?.data);
+    console.error('❌ Error status:', error.response?.status);
     throw error.response?.data || { message: "Failed to get invoices" };
   }
 };

@@ -8,22 +8,27 @@ const Profile: React.FC = () => {
     lastName: '',
     email: '',
     telephone: '',
-    address: '',
-    password: '',
   });
-  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const data = await getProfile();
-      setForm({
-        firstName: data.firstName || '',
-        lastName: data.lastName || '',
-        email: data.email || '',
-        telephone: data.telephone || '',
-        address: data.address || '',
-        password: '',
-      });
+      try {
+        const response = await getProfile();
+        console.log('Profile API response:', response);
+        
+        // Extract user data from response structure
+        const userData = response.data?.user || response.user || response;
+        
+        setForm({
+          firstName: userData.first_name || '',
+          lastName: userData.last_name || '',
+          email: userData.email || '',
+          telephone: userData.phone || '',
+        });
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        alert('Failed to load profile data. Please try again.');
+      }
     };
     fetchProfile();
   }, []);
@@ -34,14 +39,20 @@ const Profile: React.FC = () => {
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    await updateProfile(form);
-    alert('Profile updated!');
-    setIsEditing(false);
-  };
-
-  const handleCancel = () => {
-    setIsEditing(false);
-    // Optionally, reload profile data
+    try {
+      // Only update profile fields that are supported by the backend
+      const profileUpdateData = {
+        firstName: form.firstName,
+        lastName: form.lastName,
+        telephone: form.telephone,
+      };
+      
+      await updateProfile(profileUpdateData);
+      alert('Profile updated successfully!');
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
+      alert(`Failed to update profile: ${error.message || 'Unknown error'}`);
+    }
   };
 
   return (
@@ -104,47 +115,12 @@ const Profile: React.FC = () => {
                 required
               />
             </div>
-            <div>
-              <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-              <input
-                id="address"
-                type="text"
-                name="address"
-                autoComplete="street-address"
-                value={form.address}
-                onChange={handleChange}
-                className="w-full p-3 border border-gray-300 rounded-lg"
-                required
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-              <input
-                id="password"
-                type="password"
-                name="password"
-                autoComplete="new-password"
-                value={form.password}
-                onChange={handleChange}
-                className="w-full p-3 border border-gray-300 rounded-lg"
-                placeholder="Enter new password"
-              />
-            </div>
             <div className="flex space-x-4 mt-6">
               <button
                 type="submit"
                 className="flex items-center px-5 py-2 bg-amber-700 text-white rounded-lg hover:bg-amber-800 font-semibold"
               >
-            
                 Update
-              </button>
-              <button
-                type="button"
-                onClick={handleCancel}
-                className="flex items-center px-5 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 font-semibold"
-              >
-             
-                Cancel
               </button>
             </div>
           </form>

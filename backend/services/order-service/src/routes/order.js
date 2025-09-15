@@ -108,7 +108,7 @@ router.get('/admin/queue', orderLimiter, authorizeRoles('admin'), async (req, re
 // Client billing endpoints
 router.get('/client/me/billing', authenticateToken, authorizeRoles('client'), async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.userId; // Fixed: use userId instead of id
     
     // Get client record
     const clientResult = await db.query('SELECT id FROM clients WHERE user_id = $1', [userId]);
@@ -159,7 +159,7 @@ router.get('/client/me/billing', authenticateToken, authorizeRoles('client'), as
 
 router.get('/client/me/invoices', authenticateToken, authorizeRoles('client'), async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.userId; // Fixed: use userId instead of id
     
     // Get client record
     const clientResult = await db.query('SELECT id FROM clients WHERE user_id = $1', [userId]);
@@ -177,7 +177,7 @@ router.get('/client/me/invoices', authenticateToken, authorizeRoles('client'), a
     const invoicesQuery = `
       SELECT 
         o.id,
-        o.order_id,
+        o.tracking_number as order_id,
         o.recipient_name,
         o.delivery_address,
         o.total_amount,
@@ -201,7 +201,7 @@ router.get('/client/me/invoices', authenticateToken, authorizeRoles('client'), a
         order_id: invoice.order_id,
         recipient_name: invoice.recipient_name,
         delivery_address: invoice.delivery_address,
-        total_amount: parseFloat(invoice.total_amount),
+        total_amount: parseFloat(invoice.total_amount) || 0,
         payment_status: invoice.payment_status || 'pending',
         payment_method: invoice.payment_method,
         payment_date: invoice.payment_date,

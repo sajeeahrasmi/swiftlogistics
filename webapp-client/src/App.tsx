@@ -7,6 +7,7 @@ import ClientOrders from "./pages/Client/Orders";
 import ClientTracking from "./pages/Client/Tracking";
 import ClientBilling from "./pages/Client/Billing";
 import ClientProfile from "./pages/Client/Profile";
+import BillingDebug from "./pages/Client/BillingDebug";
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -42,6 +43,9 @@ const App: React.FC = () => {
           <Route path="/client/billing" element={<ClientBilling />} />
           <Route path="/client/profile" element={<ClientProfile />} />
         </Route>
+
+        {/* Debug Routes (temporary) */}
+        <Route path="/debug/billing" element={<BillingDebug />} />
 
         {/* Admin Routes */}
         <Route element={<ProtectedRoute role="admin" />}>

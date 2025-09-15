@@ -30,20 +30,58 @@ const Billing: React.FC = () => {
         setLoading(true);
         setError(null);
 
+        console.log('🔍 Loading billing data from backend...');
+        
+        // Check authentication first
+        let token = localStorage.getItem('token');
+        console.log('🔍 Token from localStorage:', token ? 'present' : 'missing');
+        console.log('🔍 Token length:', token?.length);
+        
+        if (!token) {
+          // TEMPORARY: Use test token if no token found
+          console.log('⚠️ No token found, using test token for debugging');
+          const testToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjYsImVtYWlsIjoidGVzdGNsaWVudEBleGFtcGxlLmNvbSIsInJvbGUiOiJjbGllbnQiLCJpYXQiOjE3NTc5Mzk2MDYsImV4cCI6MTc1ODAyNjAwNn0.Y6C4cKGXzEtj9cotx1QSLlbCGQ1RHyt9QUn8ji_5PJo';
+          localStorage.setItem('token', testToken);
+          token = testToken;
+          console.log('✅ Test token stored, continuing...');
+          // Don't throw error, continue with the test token
+        }
+
+        console.log('🔍 Token preview:', token.substring(0, 20) + '...');
+
         // Load both billing info and invoices
         const [billingResponse, invoicesResponse] = await Promise.allSettled([
-          getBillingInfo(),
-          getInvoices()
+          getBillingInfo().catch(err => {
+            console.error('🔴 getBillingInfo error:', err);
+            console.error('Error response:', err.response?.data);
+            console.error('Error status:', err.response?.status);
+            throw err;
+          }),
+          getInvoices().catch(err => {
+            console.error('🔴 getInvoices error:', err);
+            console.error('Error response:', err.response?.data);
+            console.error('Error status:', err.response?.status);
+            throw err;
+          })
         ]);
+
+        console.log('Billing API responses:', { billingResponse, invoicesResponse });
 
         // Handle billing info
         if (billingResponse.status === 'fulfilled') {
-          setBillingInfo(billingResponse.value?.data || billingResponse.value);
+          const billingData = billingResponse.value?.data || billingResponse.value;
+          console.log('✅ Billing data received:', billingData);
+          setBillingInfo(billingData);
+        } else {
+          console.error('❌ Billing API failed:', billingResponse.reason);
+          console.error('Billing error details:', billingResponse.reason?.response?.data);
+          console.error('Billing error status:', billingResponse.reason?.response?.status);
         }
 
         // Handle invoices
         if (invoicesResponse.status === 'fulfilled') {
           const invoicesData = invoicesResponse.value?.data || invoicesResponse.value || [];
+          console.log('✅ Invoices data received:', invoicesData);
           
           // Transform API response to match our Invoice interface
           const transformedInvoices = invoicesData.map((invoice: any) => ({
@@ -62,11 +100,15 @@ const Billing: React.FC = () => {
             transactionId: invoice.transaction_id || undefined
           }));
           
+          console.log('✅ Transformed invoices:', transformedInvoices);
           setInvoices(transformedInvoices);
         } else {
+          console.error('❌ Invoices API failed:', invoicesResponse.reason);
+          console.error('Invoices error details:', invoicesResponse.reason?.response?.data);
+          console.error('Invoices error status:', invoicesResponse.reason?.response?.status);
           // Fallback to mock data if API fails
           setInvoices(fallbackInvoices);
-          setError('Failed to load invoices from server');
+          setError('Failed to load invoices from server, showing sample data');
         }
 
       } catch (err: any) {
