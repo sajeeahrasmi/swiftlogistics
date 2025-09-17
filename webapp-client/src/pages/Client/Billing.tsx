@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import Sidebar from "../../components/Sidebar";
-import { getBillingInfo, getInvoices } from '../../api';
+import Sidebar from '../../components/Sidebar';
+import { getBillingInfoByClientId, getInvoicesByClientId } from '../../api';
 
 interface Invoice {
   recipient: string;
@@ -22,6 +22,7 @@ const Billing: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [billingInfo, setBillingInfo] = useState<any>(null);
+  const [clientId, setClientId] = useState<number>(6); // Default client ID for testing, you can make this dynamic
 
   // Load billing data from API
   useEffect(() => {
@@ -30,35 +31,18 @@ const Billing: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        console.log('🔍 Loading billing data from backend...');
+        console.log('🔍 Loading billing data from backend using client ID:', clientId);
         
-        // Check authentication first
-        let token = localStorage.getItem('token');
-        console.log('🔍 Token from localStorage:', token ? 'present' : 'missing');
-        console.log('🔍 Token length:', token?.length);
-        
-        if (!token) {
-          // TEMPORARY: Use test token if no token found
-          console.log('⚠️ No token found, using test token for debugging');
-          const testToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjYsImVtYWlsIjoidGVzdGNsaWVudEBleGFtcGxlLmNvbSIsInJvbGUiOiJjbGllbnQiLCJpYXQiOjE3NTc5Mzk2MDYsImV4cCI6MTc1ODAyNjAwNn0.Y6C4cKGXzEtj9cotx1QSLlbCGQ1RHyt9QUn8ji_5PJo';
-          localStorage.setItem('token', testToken);
-          token = testToken;
-          console.log('✅ Test token stored, continuing...');
-          // Don't throw error, continue with the test token
-        }
-
-        console.log('🔍 Token preview:', token.substring(0, 20) + '...');
-
-        // Load both billing info and invoices
+        // Load both billing info and invoices using client ID (no token required)
         const [billingResponse, invoicesResponse] = await Promise.allSettled([
-          getBillingInfo().catch(err => {
-            console.error('🔴 getBillingInfo error:', err);
+          getBillingInfoByClientId(clientId).catch(err => {
+            console.error('🔴 getBillingInfoByClientId error:', err);
             console.error('Error response:', err.response?.data);
             console.error('Error status:', err.response?.status);
             throw err;
           }),
-          getInvoices().catch(err => {
-            console.error('🔴 getInvoices error:', err);
+          getInvoicesByClientId(clientId).catch(err => {
+            console.error('🔴 getInvoicesByClientId error:', err);
             console.error('Error response:', err.response?.data);
             console.error('Error status:', err.response?.status);
             throw err;
@@ -128,7 +112,7 @@ const Billing: React.FC = () => {
     };
 
     loadBillingData();
-  }, []);
+  }, [clientId]);
 
   // Fallback data
   const fallbackInvoices: Invoice[] = [
@@ -213,16 +197,31 @@ const Billing: React.FC = () => {
       <div className="p-6 flex-1 ml-64">
         <div className="flex justify-between items-center mb-2">
           <h2 className="text-3xl font-bold text-amber-900">Billing</h2>
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2 rounded-lg flex items-center transition duration-300"
-            disabled={loading}
-          >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-            </svg>
-            Refresh
-          </button>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <label htmlFor="clientId" className="text-sm font-medium text-amber-900">
+                Client ID:
+              </label>
+              <input
+                id="clientId"
+                type="number"
+                value={clientId}
+                onChange={(e) => setClientId(parseInt(e.target.value) || 6)}
+                className="w-20 px-2 py-1 border border-amber-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                min="1"
+              />
+            </div>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2 rounded-lg flex items-center transition duration-300"
+              disabled={loading}
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+              </svg>
+              Refresh
+            </button>
+          </div>
         </div>
 
         {error && (
@@ -232,7 +231,9 @@ const Billing: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L3.35 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
               </svg>
               <div className="ml-3">
-                <p className="text-sm text-red-700">{error}</p>
+                <p className="text-sm text-red-700">
+                  {error} (Client ID: {clientId})
+                </p>
               </div>
             </div>
           </div>

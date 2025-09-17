@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from "../../components/Sidebar";
-import { getTrackingOrders } from '../../api';
+import { getClientTrackingOrders, getProfile } from '../../api';
 
 interface Order {
   id: number;
@@ -24,53 +24,69 @@ const Tracking: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const ordersPerPage = 6;
 
-  // Fetch orders from backend
+  // Check authentication before fetching orders
   useEffect(() => {
     const fetchOrders = async () => {
       try {
         setLoading(true);
         setError(null);
         
-        console.log('Fetching tracking orders from backend...');
-        const response = await getTrackingOrders();
+        // Check if user is authenticated
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setError('Please log in to view your tracking information.');
+          setLoading(false);
+          return;
+        }
+        
+        // Get user profile to extract client ID
+        console.log('Getting user profile to fetch client ID...');
+        const userProfile = await getProfile();
+        console.log('User profile:', userProfile);
+        
+        // Extract client ID from user profile
+        let clientId;
+        if (userProfile.data && userProfile.data.id) {
+          clientId = userProfile.data.id;
+        } else if (userProfile.id) {
+          clientId = userProfile.id;
+        } else {
+          // Fallback to a default client ID for testing
+          console.warn('Could not extract client ID from profile, using default ID 1');
+          clientId = 1;
+        }
+        
+        console.log('Fetching tracking orders for client ID:', clientId);
+        const response = await getClientTrackingOrders(clientId);
         console.log('Tracking orders response:', response);
         
-        if (response.success && response.data) {
+        // Handle different response formats
+        if (response && response.success && Array.isArray(response.data)) {
           setOrders(response.data);
+        } else if (response && Array.isArray(response.data)) {
+          // Handle case where response.data is directly an array
+          setOrders(response.data);
+        } else if (response && Array.isArray(response)) {
+          // Handle case where response is directly an array
+          setOrders(response);
         } else {
-          throw new Error('Invalid response format');
+          console.warn('Unexpected response format:', response);
+          setOrders([]);
+          setError('No tracking data available for your account.');
         }
       } catch (err: any) {
         console.error('Error fetching tracking orders:', err);
-        setError(err.message || 'Failed to load tracking data');
         
-        // Fallback to mock data if API fails
-        setOrders([
-          {
-            id: 1,
-            trackingNumber: "TRK-728415",
-            recipient: "Alice Johnson",
-            address: "123 Galle Road, Colombo 03",
-            status: "In Warehouse",
-            lastUpdate: "2023-10-25 09:30 AM",
-            estimatedDelivery: "2023-10-27",
-            items: 3,
-            currentLocation: "Colombo Main Warehouse",
-            routeProgress: 20
-          },
-          {
-            id: 2,
-            trackingNumber: "TRK-728416",
-            recipient: "Bob Williams",
-            address: "45 Union Place, Colombo 02",
-            status: "Processing",
-            lastUpdate: "2023-10-25 11:15 AM",
-            estimatedDelivery: "2023-10-26",
-            items: 2,
-            currentLocation: "Processing Center",
-            routeProgress: 40
-          }
-        ]);
+        // Handle specific error types
+        if (err.message?.includes('401') || err.message?.includes('Unauthorized')) {
+          setError('Your session has expired. Please log in again.');
+        } else if (err.message?.includes('Network error') || err.message?.includes('Failed to fetch')) {
+          setError('Unable to connect to the tracking service. Please check your internet connection and try again.');
+        } else {
+          setError(err.message || 'Failed to load tracking data. Please try again.');
+        }
+        
+        setOrders([]); // Always set empty array, no mock data
       } finally {
         setLoading(false);
       }
@@ -81,21 +97,62 @@ const Tracking: React.FC = () => {
 
   // Refresh function
   const refreshOrders = async () => {
-    await fetchOrders();
-  };
-
-  const fetchOrders = async () => {
     try {
+      setLoading(true);
       setError(null);
-      console.log('Refreshing tracking orders...');
-      const response = await getTrackingOrders();
       
-      if (response.success && response.data) {
+      // Check if user is authenticated
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Please log in to view your tracking information.');
+        setLoading(false);
+        return;
+      }
+      
+      // Get user profile to extract client ID
+      console.log('Refreshing - getting user profile to fetch client ID...');
+      const userProfile = await getProfile();
+      console.log('User profile on refresh:', userProfile);
+      
+      // Extract client ID from user profile
+      let clientId;
+      if (userProfile.data && userProfile.data.id) {
+        clientId = userProfile.data.id;
+      } else if (userProfile.id) {
+        clientId = userProfile.id;
+      } else {
+        console.warn('Could not extract client ID from profile, using default ID 1');
+        clientId = 1;
+      }
+      
+      console.log('Refreshing tracking orders for client ID:', clientId);
+      const response = await getClientTrackingOrders(clientId);
+      console.log('Refresh response:', response);
+      
+      // Handle different response formats
+      if (response && response.success && Array.isArray(response.data)) {
         setOrders(response.data);
+      } else if (response && Array.isArray(response.data)) {
+        setOrders(response.data);
+      } else if (response && Array.isArray(response)) {
+        setOrders(response);
+      } else {
+        console.warn('Unexpected response format during refresh:', response);
+        setOrders([]);
+        setError('No tracking data available for your account.');
       }
     } catch (err: any) {
       console.error('Error refreshing orders:', err);
-      setError(err.message || 'Failed to refresh tracking data');
+      
+      if (err.message?.includes('401') || err.message?.includes('Unauthorized')) {
+        setError('Your session has expired. Please log in again.');
+      } else {
+        setError(err.message || 'Failed to refresh tracking data. Please try again.');
+      }
+      
+      setOrders([]); // No mock data on refresh either
+    } finally {
+      setLoading(false);
     }
   };
 

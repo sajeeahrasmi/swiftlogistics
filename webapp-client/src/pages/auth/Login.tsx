@@ -54,7 +54,7 @@ const Login: React.FC = () => {
       if (user.role === "admin") {
         navigate("/admin/dashboard");
       } else {
-        navigate("/client/dashboard");
+        navigate("/client/Orders");
       }
     } catch (err: any) {
       console.error("Login failed", err);

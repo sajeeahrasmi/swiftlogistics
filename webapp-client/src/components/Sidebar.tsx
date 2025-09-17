@@ -20,7 +20,7 @@ const Sidebar: React.FC<SidebarProps> = ({ role, activeTab, setActiveTab }) => {
   };
 
   const clientLinks = [
-    { id: "dashboard", path: "/client/dashboard", label: "Dashboard" },
+    // { id: "dashboard", path: "/client/dashboard", label: "Dashboard" },
     { id: "orders", path: "/client/orders", label: "Orders" },
     { id: "tracking", path: "/client/tracking", label: "Tracking" },
     { id: "billing", path: "/client/billing", label: "Billing" },
@@ -28,7 +28,7 @@ const Sidebar: React.FC<SidebarProps> = ({ role, activeTab, setActiveTab }) => {
   ];
 
   const adminLinks = [
-    { id: "overview", path: "/admin/dashboard", label: "Dashboard" },
+    // { id: "overview", path: "/admin/dashboard", label: "Dashboard" },
     { id: "clients", path: "/admin/clients", label: "Clients" },
     { id: "warehouse", path: "/admin/warehouse", label: "Warehouse" },
     { id: "drivers", path: "/admin/drivers", label: "Drivers" },

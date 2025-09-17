@@ -22,11 +22,12 @@ const orderTrackingData = {
     recipient: "Alice Johnson",
     address: "123 Galle Road, Colombo 03",
     status: "In Warehouse",
-    lastUpdate: "2023-10-25 09:30 AM",
-    estimatedDelivery: "2023-10-27",
+    lastUpdate: "2025-09-18 09:30 AM",
+    estimatedDelivery: "2025-09-20",
     items: 3,
     currentLocation: "Colombo Main Warehouse",
-    routeProgress: 20
+    routeProgress: 20,
+    client_id: 1
   },
   "TRK-728416": {
     id: 2,
@@ -34,11 +35,12 @@ const orderTrackingData = {
     recipient: "Bob Williams",
     address: "45 Union Place, Colombo 02",
     status: "Processing",
-    lastUpdate: "2023-10-25 11:15 AM",
-    estimatedDelivery: "2023-10-26",
+    lastUpdate: "2025-09-18 11:15 AM",
+    estimatedDelivery: "2025-09-19",
     items: 2,
     currentLocation: "Processing Center",
-    routeProgress: 40
+    routeProgress: 40,
+    client_id: 1
   },
   "TRK-728417": {
     id: 3,
@@ -46,11 +48,12 @@ const orderTrackingData = {
     recipient: "Charlie Brown",
     address: "78 Hyde Park Corner, Colombo 02",
     status: "Processing",
-    lastUpdate: "2023-10-25 02:45 PM",
-    estimatedDelivery: "2023-10-28",
+    lastUpdate: "2025-09-18 02:45 PM",
+    estimatedDelivery: "2025-09-21",
     items: 5,
     currentLocation: "Colombo Processing",
-    routeProgress: 60
+    routeProgress: 60,
+    client_id: 2
   },
   "TRK-728418": {
     id: 4,
@@ -58,11 +61,12 @@ const orderTrackingData = {
     recipient: "Diana Miller",
     address: "12 Ward Place, Colombo 07",
     status: "Delivered",
-    lastUpdate: "2023-10-24 03:20 PM",
+    lastUpdate: "2025-09-17 03:20 PM",
     estimatedDelivery: "Delivered",
     items: 1,
     currentLocation: "Colombo 07",
-    routeProgress: 100
+    routeProgress: 100,
+    client_id: 1
   },
   "TRK-728419": {
     id: 5,
@@ -70,11 +74,12 @@ const orderTrackingData = {
     recipient: "Ethan Davis",
     address: "33 Barnes Place, Colombo 07",
     status: "In Warehouse",
-    lastUpdate: "2023-10-25 10:00 AM",
-    estimatedDelivery: "2023-10-29",
+    lastUpdate: "2025-09-18 10:00 AM",
+    estimatedDelivery: "2025-09-22",
     items: 4,
     currentLocation: "Colombo Main Warehouse",
-    routeProgress: 30
+    routeProgress: 30,
+    client_id: 3
   },
   "TRK-728420": {
     id: 6,
@@ -82,11 +87,12 @@ const orderTrackingData = {
     recipient: "Fiona Wilson",
     address: "56 Duplication Road, Colombo 03",
     status: "Processing",
-    lastUpdate: "2023-10-25 01:30 PM",
-    estimatedDelivery: "2023-10-27",
+    lastUpdate: "2025-09-18 01:30 PM",
+    estimatedDelivery: "2025-09-20",
     items: 2,
     currentLocation: "Colombo Processing",
-    routeProgress: 50
+    routeProgress: 50,
+    client_id: 2
   },
   "TRK-728421": {
     id: 7,
@@ -94,11 +100,12 @@ const orderTrackingData = {
     recipient: "George Martin",
     address: "90 Havelock Road, Colombo 05",
     status: "Delivered",
-    lastUpdate: "2023-10-23 11:45 AM",
+    lastUpdate: "2025-09-16 11:45 AM",
     estimatedDelivery: "Delivered",
     items: 3,
     currentLocation: "Colombo 05",
-    routeProgress: 100
+    routeProgress: 100,
+    client_id: 1
   },
   "TRK-728422": {
     id: 8,
@@ -106,11 +113,12 @@ const orderTrackingData = {
     recipient: "Helen Taylor",
     address: "22 Horton Place, Colombo 07",
     status: "In Warehouse",
-    lastUpdate: "2023-10-26 09:15 AM",
-    estimatedDelivery: "2023-10-30",
+    lastUpdate: "2025-09-18 09:15 AM",
+    estimatedDelivery: "2025-09-23",
     items: 1,
     currentLocation: "Colombo Main Warehouse",
-    routeProgress: 25
+    routeProgress: 25,
+    client_id: 3
   },
   "TRK-728423": {
     id: 9,
@@ -118,11 +126,12 @@ const orderTrackingData = {
     recipient: "Ian Murphy",
     address: "34 Galle Face, Colombo 03",
     status: "Processing",
-    lastUpdate: "2023-10-26 02:20 PM",
-    estimatedDelivery: "2023-10-31",
+    lastUpdate: "2025-09-18 02:20 PM",
+    estimatedDelivery: "2025-09-24",
     items: 4,
     currentLocation: "Colombo Processing",
-    routeProgress: 70
+    routeProgress: 70,
+    client_id: 2
   }
 };
 
@@ -169,13 +178,37 @@ app.get('/locations', (req, res) => {
 
 /**
  * GET /api/orders
- * Returns all order tracking data for the client
+ * Returns all order tracking data
  */
 app.get('/api/orders', (req, res) => {
 	const orders = Object.values(orderTrackingData);
 	res.json({
 		success: true,
 		data: orders
+	});
+});
+
+/**
+ * GET /api/client/:clientId/orders
+ * Returns tracking orders for a specific client
+ */
+app.get('/api/client/:clientId/orders', (req, res) => {
+	const { clientId } = req.params;
+	const clientIdNum = parseInt(clientId);
+	
+	if (isNaN(clientIdNum)) {
+		return res.status(400).json({
+			success: false,
+			error: 'Invalid client ID'
+		});
+	}
+	
+	const allOrders = Object.values(orderTrackingData);
+	const clientOrders = allOrders.filter(order => order.client_id === clientIdNum);
+	
+	res.json({
+		success: true,
+		data: clientOrders
 	});
 });
 

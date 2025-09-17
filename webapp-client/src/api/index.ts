@@ -565,6 +565,16 @@ export const getTrackingOrders = async () => {
   }
 };
 
+// Get tracking orders for a specific client by client ID
+export const getClientTrackingOrders = async (clientId: number) => {
+  try {
+    const response = await trackingAPI.get(`/client/${clientId}/orders`);
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: "Failed to get client tracking orders" };
+  }
+};
+
 // Track specific order by tracking number
 export const getTrackingByNumber = async (trackingNumber: string) => {
   try {
@@ -617,6 +627,49 @@ export const getInvoices = async () => {
     console.error('❌ Error response:', error.response?.data);
     console.error('❌ Error status:', error.response?.status);
     throw error.response?.data || { message: "Failed to get invoices" };
+  }
+};
+
+// New client ID-based billing functions (no authentication required)
+export const getBillingInfoByClientId = async (clientId: number) => {
+  try {
+    console.log('🔍 getBillingInfoByClientId: Making request for client ID:', clientId);
+    
+    // Create a new axios instance without auth interceptors for this request
+    const publicOrderAPI = axios.create({
+      baseURL: ORDER_SERVICE_URL,
+      timeout: 10000,
+    });
+    
+    const response = await publicOrderAPI.get(`/orders/client/${clientId}/billing`);
+    console.log('✅ getBillingInfoByClientId: Success!', response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error('❌ getBillingInfoByClientId: Error occurred', error);
+    console.error('❌ Error response:', error.response?.data);
+    console.error('❌ Error status:', error.response?.status);
+    throw error.response?.data || { message: "Failed to get billing info by client ID" };
+  }
+};
+
+export const getInvoicesByClientId = async (clientId: number) => {
+  try {
+    console.log('🔍 getInvoicesByClientId: Making request for client ID:', clientId);
+    
+    // Create a new axios instance without auth interceptors for this request
+    const publicOrderAPI = axios.create({
+      baseURL: ORDER_SERVICE_URL,
+      timeout: 10000,
+    });
+    
+    const response = await publicOrderAPI.get(`/orders/client/${clientId}/invoices`);
+    console.log('✅ getInvoicesByClientId: Success!', response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error('❌ getInvoicesByClientId: Error occurred', error);
+    console.error('❌ Error response:', error.response?.data);
+    console.error('❌ Error status:', error.response?.status);
+    throw error.response?.data || { message: "Failed to get invoices by client ID" };
   }
 };
 
