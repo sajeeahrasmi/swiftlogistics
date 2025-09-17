@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from "../../components/Sidebar";
+import { getTrackingOrders } from '../../api';
 
 interface Order {
   id: number;
@@ -15,122 +16,88 @@ interface Order {
 }
 
 const Tracking: React.FC = () => {
-  // Mock data for tracking orders with only allowed statuses
-  const [orders] = useState<Order[]>([
-    {
-      id: 1,
-      trackingNumber: "TRK-728415",
-      recipient: "Alice Johnson",
-      address: "123 Galle Road, Colombo 03",
-      status: "In Warehouse",
-      lastUpdate: "2023-10-25 09:30 AM",
-      estimatedDelivery: "2023-10-27",
-      items: 3,
-      currentLocation: "Colombo Main Warehouse",
-      routeProgress: 20
-    },
-    {
-      id: 2,
-      trackingNumber: "TRK-728416",
-      recipient: "Bob Williams",
-      address: "45 Union Place, Colombo 02",
-      status: "Processing",
-      lastUpdate: "2023-10-25 11:15 AM",
-      estimatedDelivery: "2023-10-26",
-      items: 2,
-      currentLocation: "Processing Center",
-      routeProgress: 40
-    },
-    {
-      id: 3,
-      trackingNumber: "TRK-728417",
-      recipient: "Charlie Brown",
-      address: "78 Hyde Park Corner, Colombo 02",
-      status: "Processing",
-      lastUpdate: "2023-10-25 02:45 PM",
-      estimatedDelivery: "2023-10-28",
-      items: 5,
-      currentLocation: "Colombo Processing",
-      routeProgress: 60
-    },
-    {
-      id: 4,
-      trackingNumber: "TRK-728418",
-      recipient: "Diana Miller",
-      address: "12 Ward Place, Colombo 07",
-      status: "Delivered",
-      lastUpdate: "2023-10-24 03:20 PM",
-      estimatedDelivery: "Delivered",
-      items: 1,
-      currentLocation: "Colombo 07",
-      routeProgress: 100
-    },
-    {
-      id: 5,
-      trackingNumber: "TRK-728419",
-      recipient: "Ethan Davis",
-      address: "33 Barnes Place, Colombo 07",
-      status: "In Warehouse",
-      lastUpdate: "2023-10-25 10:00 AM",
-      estimatedDelivery: "2023-10-29",
-      items: 4,
-      currentLocation: "Colombo Main Warehouse",
-      routeProgress: 30
-    },
-    {
-      id: 6,
-      trackingNumber: "TRK-728420",
-      recipient: "Fiona Wilson",
-      address: "56 Duplication Road, Colombo 03",
-      status: "Processing",
-      lastUpdate: "2023-10-25 01:30 PM",
-      estimatedDelivery: "2023-10-27",
-      items: 2,
-      currentLocation: "Colombo Processing",
-      routeProgress: 50
-    },
-    {
-      id: 7,
-      trackingNumber: "TRK-728421",
-      recipient: "George Martin",
-      address: "90 Havelock Road, Colombo 05",
-      status: "Delivered",
-      lastUpdate: "2023-10-23 11:45 AM",
-      estimatedDelivery: "Delivered",
-      items: 3,
-      currentLocation: "Colombo 05",
-      routeProgress: 100
-    },
-    {
-      id: 8,
-      trackingNumber: "TRK-728422",
-      recipient: "Helen Taylor",
-      address: "22 Horton Place, Colombo 07",
-      status: "In Warehouse",
-      lastUpdate: "2023-10-26 09:15 AM",
-      estimatedDelivery: "2023-10-30",
-      items: 1,
-      currentLocation: "Colombo Main Warehouse",
-      routeProgress: 25
-    },
-    {
-      id: 9,
-      trackingNumber: "TRK-728423",
-      recipient: "Ian Murphy",
-      address: "34 Galle Face, Colombo 03",
-      status: "Processing",
-      lastUpdate: "2023-10-26 02:20 PM",
-      estimatedDelivery: "2023-10-31",
-      items: 4,
-      currentLocation: "Colombo Processing",
-      routeProgress: 70
-    }
-  ]);
-
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
   const ordersPerPage = 6;
+
+  // Fetch orders from backend
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        console.log('Fetching tracking orders from backend...');
+        const response = await getTrackingOrders();
+        console.log('Tracking orders response:', response);
+        
+        if (response.success && response.data) {
+          setOrders(response.data);
+        } else {
+          throw new Error('Invalid response format');
+        }
+      } catch (err: any) {
+        console.error('Error fetching tracking orders:', err);
+        setError(err.message || 'Failed to load tracking data');
+        
+        // Fallback to mock data if API fails
+        setOrders([
+          {
+            id: 1,
+            trackingNumber: "TRK-728415",
+            recipient: "Alice Johnson",
+            address: "123 Galle Road, Colombo 03",
+            status: "In Warehouse",
+            lastUpdate: "2023-10-25 09:30 AM",
+            estimatedDelivery: "2023-10-27",
+            items: 3,
+            currentLocation: "Colombo Main Warehouse",
+            routeProgress: 20
+          },
+          {
+            id: 2,
+            trackingNumber: "TRK-728416",
+            recipient: "Bob Williams",
+            address: "45 Union Place, Colombo 02",
+            status: "Processing",
+            lastUpdate: "2023-10-25 11:15 AM",
+            estimatedDelivery: "2023-10-26",
+            items: 2,
+            currentLocation: "Processing Center",
+            routeProgress: 40
+          }
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
+
+  // Refresh function
+  const refreshOrders = async () => {
+    await fetchOrders();
+  };
+
+  const fetchOrders = async () => {
+    try {
+      setError(null);
+      console.log('Refreshing tracking orders...');
+      const response = await getTrackingOrders();
+      
+      if (response.success && response.data) {
+        setOrders(response.data);
+      }
+    } catch (err: any) {
+      console.error('Error refreshing orders:', err);
+      setError(err.message || 'Failed to refresh tracking data');
+    }
+  };
 
   // Filter orders based on search and status
   const filteredOrders = orders.filter(order => {
@@ -214,9 +181,9 @@ const Tracking: React.FC = () => {
               </div>
             </div>
             
-            <div className="w-full md:w-auto">
+            <div className="flex space-x-4 w-full md:w-auto">
               <select 
-                className="w-full md:w-auto border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                className="flex-1 md:flex-none border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
                 value={statusFilter}
                 onChange={(e) => {
                   setStatusFilter(e.target.value);
@@ -228,12 +195,42 @@ const Tracking: React.FC = () => {
                 <option value="In Warehouse">In Warehouse</option>
                 <option value="Delivered">Delivered</option>
               </select>
+              
+              <button
+                onClick={refreshOrders}
+                className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition-colors"
+                title="Refresh orders"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+              </button>
             </div>
           </div>
+          
+          {error && (
+            <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+              <div className="flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"></path>
+                </svg>
+                {error}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Tracking Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+        {/* Loading State */}
+        {loading ? (
+          <div className="text-center py-12 bg-white rounded-lg shadow-md">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto mb-4"></div>
+            <h3 className="text-lg font-medium text-gray-900">Loading tracking data...</h3>
+            <p className="text-sm text-gray-500">Please wait while we fetch your orders</p>
+          </div>
+        ) : (
+          <>
+            {/* Tracking Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
           {currentOrders.map((order) => (
             <div key={order.id} className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col">
               <div className="p-5 flex-1">
@@ -335,20 +332,22 @@ const Tracking: React.FC = () => {
                   </button>
                 ))}
                 
-                <button
-                  onClick={() => paginate(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className={`px-3 py-1 rounded-md ${
-                    currentPage === totalPages
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
-                  }`}
-                >
-                  Next
-                </button>
+                  <button
+                    onClick={() => paginate(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className={`px-3 py-1 rounded-md ${
+                      currentPage === totalPages
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                    }`}
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          )}
+          </>
         )}
       </div>
     </div>

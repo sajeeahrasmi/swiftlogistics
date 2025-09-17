@@ -14,6 +14,118 @@ app.use(bodyParser.json());
 // In-memory storage for demo: { [driverId]: { ...locationData } }
 const driverLocations = {};
 
+// Mock order tracking data for demo purposes
+const orderTrackingData = {
+  "TRK-728415": {
+    id: 1,
+    trackingNumber: "TRK-728415",
+    recipient: "Alice Johnson",
+    address: "123 Galle Road, Colombo 03",
+    status: "In Warehouse",
+    lastUpdate: "2023-10-25 09:30 AM",
+    estimatedDelivery: "2023-10-27",
+    items: 3,
+    currentLocation: "Colombo Main Warehouse",
+    routeProgress: 20
+  },
+  "TRK-728416": {
+    id: 2,
+    trackingNumber: "TRK-728416",
+    recipient: "Bob Williams",
+    address: "45 Union Place, Colombo 02",
+    status: "Processing",
+    lastUpdate: "2023-10-25 11:15 AM",
+    estimatedDelivery: "2023-10-26",
+    items: 2,
+    currentLocation: "Processing Center",
+    routeProgress: 40
+  },
+  "TRK-728417": {
+    id: 3,
+    trackingNumber: "TRK-728417",
+    recipient: "Charlie Brown",
+    address: "78 Hyde Park Corner, Colombo 02",
+    status: "Processing",
+    lastUpdate: "2023-10-25 02:45 PM",
+    estimatedDelivery: "2023-10-28",
+    items: 5,
+    currentLocation: "Colombo Processing",
+    routeProgress: 60
+  },
+  "TRK-728418": {
+    id: 4,
+    trackingNumber: "TRK-728418",
+    recipient: "Diana Miller",
+    address: "12 Ward Place, Colombo 07",
+    status: "Delivered",
+    lastUpdate: "2023-10-24 03:20 PM",
+    estimatedDelivery: "Delivered",
+    items: 1,
+    currentLocation: "Colombo 07",
+    routeProgress: 100
+  },
+  "TRK-728419": {
+    id: 5,
+    trackingNumber: "TRK-728419",
+    recipient: "Ethan Davis",
+    address: "33 Barnes Place, Colombo 07",
+    status: "In Warehouse",
+    lastUpdate: "2023-10-25 10:00 AM",
+    estimatedDelivery: "2023-10-29",
+    items: 4,
+    currentLocation: "Colombo Main Warehouse",
+    routeProgress: 30
+  },
+  "TRK-728420": {
+    id: 6,
+    trackingNumber: "TRK-728420",
+    recipient: "Fiona Wilson",
+    address: "56 Duplication Road, Colombo 03",
+    status: "Processing",
+    lastUpdate: "2023-10-25 01:30 PM",
+    estimatedDelivery: "2023-10-27",
+    items: 2,
+    currentLocation: "Colombo Processing",
+    routeProgress: 50
+  },
+  "TRK-728421": {
+    id: 7,
+    trackingNumber: "TRK-728421",
+    recipient: "George Martin",
+    address: "90 Havelock Road, Colombo 05",
+    status: "Delivered",
+    lastUpdate: "2023-10-23 11:45 AM",
+    estimatedDelivery: "Delivered",
+    items: 3,
+    currentLocation: "Colombo 05",
+    routeProgress: 100
+  },
+  "TRK-728422": {
+    id: 8,
+    trackingNumber: "TRK-728422",
+    recipient: "Helen Taylor",
+    address: "22 Horton Place, Colombo 07",
+    status: "In Warehouse",
+    lastUpdate: "2023-10-26 09:15 AM",
+    estimatedDelivery: "2023-10-30",
+    items: 1,
+    currentLocation: "Colombo Main Warehouse",
+    routeProgress: 25
+  },
+  "TRK-728423": {
+    id: 9,
+    trackingNumber: "TRK-728423",
+    recipient: "Ian Murphy",
+    address: "34 Galle Face, Colombo 03",
+    status: "Processing",
+    lastUpdate: "2023-10-26 02:20 PM",
+    estimatedDelivery: "2023-10-31",
+    items: 4,
+    currentLocation: "Colombo Processing",
+    routeProgress: 70
+  }
+};
+
 /**
  * POST /location
  * Receives a location/status update from a driver
@@ -53,6 +165,88 @@ app.get('/location/:driverId', (req, res) => {
  */
 app.get('/locations', (req, res) => {
 	res.json(Object.values(driverLocations));
+});
+
+/**
+ * GET /api/orders
+ * Returns all order tracking data for the client
+ */
+app.get('/api/orders', (req, res) => {
+	const orders = Object.values(orderTrackingData);
+	res.json({
+		success: true,
+		data: orders
+	});
+});
+
+/**
+ * GET /api/orders/:trackingNumber
+ * Returns specific order tracking data by tracking number
+ */
+app.get('/api/orders/:trackingNumber', (req, res) => {
+	const { trackingNumber } = req.params;
+	const order = orderTrackingData[trackingNumber];
+	
+	if (!order) {
+		return res.status(404).json({ 
+			success: false,
+			error: 'Order not found with this tracking number' 
+		});
+	}
+	
+	res.json({
+		success: true,
+		data: order
+	});
+});
+
+/**
+ * PUT /api/orders/:trackingNumber
+ * Updates order tracking information
+ */
+app.put('/api/orders/:trackingNumber', (req, res) => {
+	const { trackingNumber } = req.params;
+	const updateData = req.body;
+	
+	if (!orderTrackingData[trackingNumber]) {
+		return res.status(404).json({ 
+			success: false,
+			error: 'Order not found with this tracking number' 
+		});
+	}
+	
+	// Update the order data
+	orderTrackingData[trackingNumber] = {
+		...orderTrackingData[trackingNumber],
+		...updateData,
+		lastUpdate: new Date().toLocaleString()
+	};
+	
+	res.json({
+		success: true,
+		data: orderTrackingData[trackingNumber]
+	});
+});
+
+/**
+ * GET /api/tracking/:trackingNumber
+ * Alternative endpoint for tracking a specific order (for compatibility)
+ */
+app.get('/api/tracking/:trackingNumber', (req, res) => {
+	const { trackingNumber } = req.params;
+	const order = orderTrackingData[trackingNumber];
+	
+	if (!order) {
+		return res.status(404).json({ 
+			success: false,
+			error: 'Order not found with this tracking number' 
+		});
+	}
+	
+	res.json({
+		success: true,
+		data: order
+	});
 });
 
 // (Optional) Health check endpoint

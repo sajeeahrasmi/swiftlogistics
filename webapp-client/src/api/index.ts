@@ -51,7 +51,7 @@ addAuthInterceptor(orderAPI);
 addAuthInterceptor(trackingAPI);
 
 // ==================== AUTH ====================
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3010/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3010/api';
 
 // Cache for profile data to reduce API calls
 let profileCache: any = null;
@@ -241,10 +241,42 @@ export const loginUser = async (email: string, password: string) => {
 
 export const signupUser = async (userData: any) => {
   try {
-    const response = await authAPI.post("/auth/register", userData);
-    return response.data;
+    console.log('Attempting signup to:', `${API_BASE_URL}/auth/register`);
+    console.log('Signup data:', userData);
+    
+    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userData),
+    });
+
+    const responseText = await response.text();
+    let data;
+    
+    try {
+      data = responseText ? JSON.parse(responseText) : {};
+    } catch (parseError) {
+      throw new Error(`Invalid response format: ${response.status}`);
+    }
+
+    console.log('Signup response:', data);
+
+    if (!response.ok) {
+      const errorMessage = data.message || data.error || `HTTP error! status: ${response.status}`;
+      throw new Error(errorMessage);
+    }
+
+    return data;
   } catch (error: any) {
-    throw error.response?.data || { message: "Signup failed" };
+    console.error('Signup API error:', error);
+    
+    if (error instanceof TypeError || error.message.includes('fetch')) {
+      throw new Error('Network error. Please check your connection and try again.');
+    }
+    
+    throw error;
   }
 };
 
@@ -520,6 +552,36 @@ export const getOrderTracking = async (orderId: number) => {
     return response.data;
   } catch (error: any) {
     throw error.response?.data || { message: "Failed to get order tracking" };
+  }
+};
+
+// Get all tracking orders for the client
+export const getTrackingOrders = async () => {
+  try {
+    const response = await trackingAPI.get("/orders");
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: "Failed to get tracking orders" };
+  }
+};
+
+// Track specific order by tracking number
+export const getTrackingByNumber = async (trackingNumber: string) => {
+  try {
+    const response = await trackingAPI.get(`/orders/${trackingNumber}`);
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: "Failed to track order by number" };
+  }
+};
+
+// Update order tracking information
+export const updateOrderTracking = async (trackingNumber: string, updateData: any) => {
+  try {
+    const response = await trackingAPI.put(`/orders/${trackingNumber}`, updateData);
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: "Failed to update order tracking" };
   }
 };
 
