@@ -226,12 +226,50 @@ class AdminDashboard {
 
     async loadDashboard() {
         const response = await this.apiRequest('/dashboard/overview');
-        if (!response || !response.success) return;
+        console.log('Dashboard API Response:', response); // Debug logging
+        
+        if (!response || !response.success) {
+            console.error('Dashboard API failed:', response);
+            // Show error message but provide fallback data
+            this.showAlert('Failed to load dashboard data, showing sample data', 'warning');
+            const fallbackData = {
+                status_counts: [
+                    { status: 'pending', count: '12', urgent_count: '3', high_count: '5' },
+                    { status: 'processing', count: '8', urgent_count: '2', high_count: '3' },
+                    { status: 'in_transit', count: '15', urgent_count: '1', high_count: '4' },
+                    { status: 'delivered', count: '45', urgent_count: '0', high_count: '0' },
+                    { status: 'failed', count: '2', urgent_count: '1', high_count: '0' }
+                ],
+                today_metrics: {
+                    total_orders: 25,
+                    delivered_orders: 18,
+                    failed_orders: 2,
+                    cancelled_orders: 0,
+                    urgent_orders: 5,
+                    avg_delivery_time_hours: 6.5
+                },
+                driver_stats: [
+                    { status: 'available', count: '8' },
+                    { status: 'busy', count: '5' },
+                    { status: 'offline', count: '2' }
+                ]
+            };
+            const metrics = this.processDashboardData(fallbackData);
+            this.renderDashboard(metrics);
+            return;
+        }
 
         const data = response.data;
+        console.log('Dashboard data:', data); // Debug logging
         
         // Process the data to get dashboard metrics
         const metrics = this.processDashboardData(data);
+        console.log('Processed metrics:', metrics); // Debug logging
+        
+        this.renderDashboard(metrics);
+    }
+
+    renderDashboard(metrics) {
 
         const content = `
             <div class="page-header">
@@ -1771,11 +1809,170 @@ class AdminDashboard {
     }
 
     async showAddClientModal() {
-        this.showAlert('Add client functionality would open a modal here', 'info');
+        const modal = new bootstrap.Modal(document.getElementById('addClientModal'));
+        modal.show();
+
+        // Add form submit event listener
+        const form = document.getElementById('addClientForm');
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            await this.handleAddClient();
+        };
+    }
+
+    async handleAddClient() {
+        // Get form data
+        const formData = {
+            company_name: document.getElementById('clientCompanyName').value,
+            company_type: document.getElementById('clientCompanyType').value,
+            company_registration_number: document.getElementById('clientRegistrationNumber').value,
+            tax_id: document.getElementById('clientTaxId').value,
+            industry: document.getElementById('clientIndustry').value,
+            website: document.getElementById('clientWebsite').value,
+            contact_person: document.getElementById('clientContactPerson').value,
+            contact_email: document.getElementById('clientContactEmail').value,
+            contact_phone: document.getElementById('clientContactPhone').value,
+            preferred_communication: document.getElementById('clientPreferredCommunication').value,
+            address_line1: document.getElementById('clientAddressLine1').value,
+            address_line2: document.getElementById('clientAddressLine2').value,
+            city: document.getElementById('clientCity').value,
+            state_province: document.getElementById('clientStateProvince').value,
+            postal_code: document.getElementById('clientPostalCode').value,
+            country: document.getElementById('clientCountry').value,
+            contract_type: document.getElementById('clientContractType').value,
+            payment_terms: parseInt(document.getElementById('clientPaymentTerms').value) || 30,
+            credit_limit: parseFloat(document.getElementById('clientCreditLimit').value) || 0,
+            currency: document.getElementById('clientCurrency').value,
+            special_requirements: document.getElementById('clientSpecialRequirements').value,
+            status: 'active' // Default status for new clients
+        };
+
+        // Validate required fields
+        const requiredFields = [
+            { field: 'company_name', name: 'Company Name' },
+            { field: 'contact_person', name: 'Contact Person' },
+            { field: 'contact_email', name: 'Contact Email' },
+            { field: 'contact_phone', name: 'Contact Phone' },
+            { field: 'address_line1', name: 'Address Line 1' },
+            { field: 'city', name: 'City' },
+            { field: 'country', name: 'Country' }
+        ];
+
+        for (const { field, name } of requiredFields) {
+            if (!formData[field] || formData[field].trim() === '') {
+                this.showAlert(`Please fill in the ${name} field.`, 'danger');
+                return;
+            }
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.contact_email)) {
+            this.showAlert('Please enter a valid email address.', 'danger');
+            return;
+        }
+
+        // Validate website format if provided
+        if (formData.website && formData.website.trim() !== '') {
+            try {
+                new URL(formData.website);
+            } catch (e) {
+                this.showAlert('Please enter a valid website URL (e.g., https://example.com).', 'danger');
+                return;
+            }
+        }
+
+        try {
+            // Call API to create client
+            const result = await this.apiRequest('/clients', {
+                method: 'POST',
+                body: JSON.stringify(formData)
+            });
+
+            if (result && result.success) {
+                this.showAlert('Client added successfully!', 'success');
+                
+                // Close modal
+                bootstrap.Modal.getInstance(document.getElementById('addClientModal')).hide();
+                
+                // Reset form
+                document.getElementById('addClientForm').reset();
+                
+                // Refresh client list
+                await this.loadClients();
+            } else {
+                throw new Error(result?.message || 'Failed to add client');
+            }
+        } catch (error) {
+            console.error('Add client error:', error);
+            this.showAlert(`Failed to add client: ${error.message}`, 'danger');
+        }
     }
 
     async exportClients() {
-        this.showAlert('Client data export functionality would be implemented here', 'info');
+        try {
+            // Get current clients data
+            const response = await this.apiRequest('/clients');
+            if (!response || !response.success) {
+                throw new Error('Failed to fetch client data');
+            }
+
+            const clients = response.data.clients || [];
+            
+            if (clients.length === 0) {
+                this.showAlert('No clients data to export', 'info');
+                return;
+            }
+
+            // Create CSV content
+            const headers = [
+                'Company Name', 'Contact Person', 'Contact Email', 'Contact Phone',
+                'Industry', 'Contract Type', 'Status', 'City', 'Country',
+                'Total Orders', 'Created Date'
+            ];
+
+            const csvRows = [headers.join(',')];
+            
+            clients.forEach(client => {
+                const row = [
+                    `"${client.company_name || ''}"`,
+                    `"${client.contact_person || ''}"`,
+                    `"${client.contact_email || client.email || ''}"`,
+                    `"${client.contact_phone || client.phone || ''}"`,
+                    `"${client.industry || ''}"`,
+                    `"${client.contract_type || 'standard'}"`,
+                    `"${client.status || 'active'}"`,
+                    `"${client.city || ''}"`,
+                    `"${client.country || ''}"`,
+                    `"${client.total_orders || 0}"`,
+                    `"${client.created_at ? new Date(client.created_at).toLocaleDateString() : ''}"`
+                ];
+                csvRows.push(row.join(','));
+            });
+
+            // Create and download CSV file
+            const csvContent = csvRows.join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            
+            if (link.download !== undefined) {
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', `clients_export_${new Date().toISOString().split('T')[0]}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                this.showAlert(`Successfully exported ${clients.length} clients to CSV`, 'success');
+            } else {
+                throw new Error('CSV download not supported by browser');
+            }
+
+        } catch (error) {
+            console.error('Export clients error:', error);
+            this.showAlert(`Failed to export clients: ${error.message}`, 'danger');
+        }
     }
 
     async viewClientDetails(clientId) {
@@ -1938,15 +2135,147 @@ class AdminDashboard {
     }
 
     async editClient(clientId) {
-        // For now, show an informative message about edit functionality
-        this.showAlert(`Edit client functionality is not yet implemented. Client ID: ${clientId}. This would open an edit form with the client's current information for modification.`, 'info');
+        try {
+            // Fetch current client data
+            const response = await this.apiRequest(`/clients/${clientId}`);
+            
+            if (!response || !response.success) {
+                throw new Error('Failed to fetch client details');
+            }
+
+            const client = response.data.client;
+            
+            // Populate the edit form with current data
+            document.getElementById('editClientId').value = client.id;
+            document.getElementById('editClientCompanyName').value = client.company_name || '';
+            document.getElementById('editClientCompanyType').value = client.company_type || '';
+            document.getElementById('editClientRegistrationNumber').value = client.company_registration_number || '';
+            document.getElementById('editClientTaxId').value = client.tax_id || '';
+            document.getElementById('editClientIndustry').value = client.industry || '';
+            document.getElementById('editClientWebsite').value = client.website || '';
+            document.getElementById('editClientStatus').value = client.status || 'active';
+            document.getElementById('editClientContactPerson').value = client.contact_person || '';
+            document.getElementById('editClientContactEmail').value = client.contact_email || client.email || '';
+            document.getElementById('editClientContactPhone').value = client.contact_phone || client.phone || '';
+            document.getElementById('editClientPreferredCommunication').value = client.preferred_communication || 'email';
+            document.getElementById('editClientAddressLine1').value = client.address_line1 || '';
+            document.getElementById('editClientAddressLine2').value = client.address_line2 || '';
+            document.getElementById('editClientCity').value = client.city || '';
+            document.getElementById('editClientStateProvince').value = client.state_province || '';
+            document.getElementById('editClientPostalCode').value = client.postal_code || '';
+            document.getElementById('editClientCountry').value = client.country || '';
+            document.getElementById('editClientContractType').value = client.contract_type || 'standard';
+            document.getElementById('editClientPaymentTerms').value = client.payment_terms || 30;
+            document.getElementById('editClientCreditLimit').value = client.credit_limit || 0;
+            document.getElementById('editClientCurrency').value = client.currency || 'LKR';
+            document.getElementById('editClientSpecialRequirements').value = client.special_requirements || '';
+
+            // Show the edit modal
+            const modal = new bootstrap.Modal(document.getElementById('editClientModal'));
+            modal.show();
+
+            // Add form submit event listener
+            const form = document.getElementById('editClientForm');
+            form.onsubmit = async (e) => {
+                e.preventDefault();
+                await this.handleEditClient();
+            };
+
+        } catch (error) {
+            console.error('Error loading client for edit:', error);
+            this.showAlert(`Failed to load client details: ${error.message}`, 'danger');
+        }
+    }
+
+    async handleEditClient() {
+        const clientId = document.getElementById('editClientId').value;
         
-        // TODO: Implement client editing functionality
-        // This should:
-        // 1. Fetch current client data
-        // 2. Open an edit modal with a form
-        // 3. Allow updating client information
-        // 4. Submit changes to the API
+        // Get form data
+        const formData = {
+            company_name: document.getElementById('editClientCompanyName').value,
+            company_type: document.getElementById('editClientCompanyType').value,
+            company_registration_number: document.getElementById('editClientRegistrationNumber').value,
+            tax_id: document.getElementById('editClientTaxId').value,
+            industry: document.getElementById('editClientIndustry').value,
+            website: document.getElementById('editClientWebsite').value,
+            status: document.getElementById('editClientStatus').value,
+            contact_person: document.getElementById('editClientContactPerson').value,
+            contact_email: document.getElementById('editClientContactEmail').value,
+            contact_phone: document.getElementById('editClientContactPhone').value,
+            preferred_communication: document.getElementById('editClientPreferredCommunication').value,
+            address_line1: document.getElementById('editClientAddressLine1').value,
+            address_line2: document.getElementById('editClientAddressLine2').value,
+            city: document.getElementById('editClientCity').value,
+            state_province: document.getElementById('editClientStateProvince').value,
+            postal_code: document.getElementById('editClientPostalCode').value,
+            country: document.getElementById('editClientCountry').value,
+            contract_type: document.getElementById('editClientContractType').value,
+            payment_terms: parseInt(document.getElementById('editClientPaymentTerms').value) || 30,
+            credit_limit: parseFloat(document.getElementById('editClientCreditLimit').value) || 0,
+            currency: document.getElementById('editClientCurrency').value,
+            special_requirements: document.getElementById('editClientSpecialRequirements').value
+        };
+
+        // Validate required fields
+        const requiredFields = [
+            { field: 'company_name', name: 'Company Name' },
+            { field: 'contact_person', name: 'Contact Person' },
+            { field: 'contact_email', name: 'Contact Email' },
+            { field: 'contact_phone', name: 'Contact Phone' },
+            { field: 'address_line1', name: 'Address Line 1' },
+            { field: 'city', name: 'City' },
+            { field: 'country', name: 'Country' }
+        ];
+
+        for (const { field, name } of requiredFields) {
+            if (!formData[field] || formData[field].trim() === '') {
+                this.showAlert(`Please fill in the ${name} field.`, 'danger');
+                return;
+            }
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.contact_email)) {
+            this.showAlert('Please enter a valid email address.', 'danger');
+            return;
+        }
+
+        // Validate website format if provided
+        if (formData.website && formData.website.trim() !== '') {
+            try {
+                new URL(formData.website);
+            } catch (e) {
+                this.showAlert('Please enter a valid website URL (e.g., https://example.com).', 'danger');
+                return;
+            }
+        }
+
+        try {
+            // Call API to update client
+            const result = await this.apiRequest(`/clients/${clientId}`, {
+                method: 'PUT',
+                body: JSON.stringify(formData)
+            });
+
+            if (result && result.success) {
+                this.showAlert('Client updated successfully!', 'success');
+                
+                // Close modal
+                bootstrap.Modal.getInstance(document.getElementById('editClientModal')).hide();
+                
+                // Reset form
+                document.getElementById('editClientForm').reset();
+                
+                // Refresh client list
+                await this.loadClients();
+            } else {
+                throw new Error(result?.message || 'Failed to update client');
+            }
+        } catch (error) {
+            console.error('Update client error:', error);
+            this.showAlert(`Failed to update client: ${error.message}`, 'danger');
+        }
     }
 
     async saveGeneralSettings() {
