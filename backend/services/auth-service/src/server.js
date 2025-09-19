@@ -110,9 +110,12 @@ const corsOptions = {
           'http://localhost:5173', // Vite default port
           'http://localhost:5174', // Vite alternate port
           'http://localhost:5175', // Vite alternate port
+          'http://localhost:8080',  // Admin dashboard
           'http://127.0.0.1:3000',
           'http://127.0.0.1:5173',
-          'http://127.0.0.1:5174'
+          'http://127.0.0.1:5174',
+          'http://127.0.0.1:8080',
+          'http://172.20.10.4:8080' // Current IP for admin dashboard
         ];
     
     if (allowedOrigins.indexOf(origin) !== -1) {

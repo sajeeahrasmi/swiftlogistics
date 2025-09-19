@@ -169,6 +169,74 @@
             color: #6c757d;
             margin-bottom: 0;
         }
+        
+        /* Timeline Styles */
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 1rem;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, #667eea, #764ba2);
+        }
+        
+        .timeline-item {
+            position: relative;
+            margin-bottom: 2rem;
+            padding-left: 2rem;
+        }
+        
+        .timeline-marker {
+            position: absolute;
+            left: -2rem;
+            top: 0;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 0 4px white, 0 0 10px rgba(0,0,0,0.1);
+            z-index: 1;
+        }
+        
+        .timeline-content {
+            background: white;
+            border-radius: 10px;
+            padding: 1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+        }
+        
+        .timeline-content h6 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Modal Enhancements */
+        .modal-xl {
+            max-width: 1200px;
+        }
+        
+        .card {
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        
+        .card-header {
+            border-bottom: 1px solid #dee2e6;
+            background-color: #f8f9fa !important;
+        }
+        
+        .badge {
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -191,6 +259,11 @@
                         <li class="nav-item">
                             <a class="nav-link" href="#" data-page="orders">
                                 <i class="bi bi-box-seam me-2"></i> Order Management
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" data-page="tracking">
+                                <i class="bi bi-geo-alt me-2"></i> Order Tracking
                             </a>
                         </li>
                         <li class="nav-item">
@@ -438,6 +511,446 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button type="button" class="btn btn-primary" id="editDriverBtn">Edit Driver</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Client Modal -->
+    <div class="modal fade" id="addClientModal" tabindex="-1" aria-labelledby="addClientModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addClientModalLabel">
+                        <i class="bi bi-plus-circle me-2"></i>Add New Client
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="addClientForm">
+                    <div class="modal-body">
+                        <div class="row">
+                            <!-- Company Information -->
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3"><i class="bi bi-building me-2"></i>Company Information</h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Company Name *</label>
+                                    <input type="text" class="form-control" id="clientCompanyName" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Company Type</label>
+                                    <select class="form-select" id="clientCompanyType">
+                                        <option value="">Select Type</option>
+                                        <option value="corporation">Corporation</option>
+                                        <option value="partnership">Partnership</option>
+                                        <option value="sole_proprietorship">Sole Proprietorship</option>
+                                        <option value="llc">LLC</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Registration Number</label>
+                                    <input type="text" class="form-control" id="clientRegistrationNumber">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Tax ID</label>
+                                    <input type="text" class="form-control" id="clientTaxId">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Industry</label>
+                                    <input type="text" class="form-control" id="clientIndustry">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Website</label>
+                                    <input type="url" class="form-control" id="clientWebsite" placeholder="https://example.com">
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="row">
+                            <!-- Contact Information -->
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3"><i class="bi bi-person me-2"></i>Contact Information</h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Contact Person *</label>
+                                    <input type="text" class="form-control" id="clientContactPerson" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Contact Email *</label>
+                                    <input type="email" class="form-control" id="clientContactEmail" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Contact Phone *</label>
+                                    <input type="tel" class="form-control" id="clientContactPhone" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Preferred Communication</label>
+                                    <select class="form-select" id="clientPreferredCommunication">
+                                        <option value="email">Email</option>
+                                        <option value="phone">Phone</option>
+                                        <option value="sms">SMS</option>
+                                        <option value="whatsapp">WhatsApp</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="row">
+                            <!-- Address Information -->
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3"><i class="bi bi-geo-alt me-2"></i>Address Information</h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Address Line 1 *</label>
+                                    <input type="text" class="form-control" id="clientAddressLine1" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Address Line 2</label>
+                                    <input type="text" class="form-control" id="clientAddressLine2">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">City *</label>
+                                    <input type="text" class="form-control" id="clientCity" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">State/Province</label>
+                                    <input type="text" class="form-control" id="clientStateProvince">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Postal Code</label>
+                                    <input type="text" class="form-control" id="clientPostalCode">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Country *</label>
+                                    <select class="form-select" id="clientCountry" required>
+                                        <option value="">Select Country</option>
+                                        <option value="LK">Sri Lanka</option>
+                                        <option value="IN">India</option>
+                                        <option value="US">United States</option>
+                                        <option value="UK">United Kingdom</option>
+                                        <option value="AU">Australia</option>
+                                        <option value="CA">Canada</option>
+                                        <!-- Add more countries as needed -->
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="row">
+                            <!-- Business Settings -->
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3"><i class="bi bi-briefcase me-2"></i>Business Settings</h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Contract Type</label>
+                                    <select class="form-select" id="clientContractType">
+                                        <option value="standard">Standard</option>
+                                        <option value="premium">Premium</option>
+                                        <option value="enterprise">Enterprise</option>
+                                        <option value="custom">Custom</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Payment Terms (days)</label>
+                                    <input type="number" class="form-control" id="clientPaymentTerms" value="30" min="0" max="365">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Credit Limit</label>
+                                    <input type="number" class="form-control" id="clientCreditLimit" min="0" step="0.01">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Currency</label>
+                                    <select class="form-select" id="clientCurrency">
+                                        <option value="LKR">Sri Lankan Rupee (LKR)</option>
+                                        <option value="USD">US Dollar (USD)</option>
+                                        <option value="EUR">Euro (EUR)</option>
+                                        <option value="GBP">British Pound (GBP)</option>
+                                        <option value="INR">Indian Rupee (INR)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label class="form-label">Special Requirements</label>
+                                    <textarea class="form-control" id="clientSpecialRequirements" rows="3" placeholder="Any special handling, delivery instructions, or requirements..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-2"></i>Add Client
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Client Modal -->
+    <div class="modal fade" id="editClientModal" tabindex="-1" aria-labelledby="editClientModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editClientModalLabel">
+                        <i class="bi bi-pencil me-2"></i>Edit Client
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="editClientForm">
+                    <input type="hidden" id="editClientId">
+                    <div class="modal-body">
+                        <div class="row">
+                            <!-- Company Information -->
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3"><i class="bi bi-building me-2"></i>Company Information</h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Company Name *</label>
+                                    <input type="text" class="form-control" id="editClientCompanyName" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Company Type</label>
+                                    <select class="form-select" id="editClientCompanyType">
+                                        <option value="">Select Type</option>
+                                        <option value="corporation">Corporation</option>
+                                        <option value="partnership">Partnership</option>
+                                        <option value="sole_proprietorship">Sole Proprietorship</option>
+                                        <option value="llc">LLC</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Registration Number</label>
+                                    <input type="text" class="form-control" id="editClientRegistrationNumber">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Tax ID</label>
+                                    <input type="text" class="form-control" id="editClientTaxId">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Industry</label>
+                                    <input type="text" class="form-control" id="editClientIndustry">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Website</label>
+                                    <input type="url" class="form-control" id="editClientWebsite" placeholder="https://example.com">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Status</label>
+                                    <select class="form-select" id="editClientStatus">
+                                        <option value="active">Active</option>
+                                        <option value="inactive">Inactive</option>
+                                        <option value="suspended">Suspended</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="row">
+                            <!-- Contact Information -->
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3"><i class="bi bi-person me-2"></i>Contact Information</h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Contact Person *</label>
+                                    <input type="text" class="form-control" id="editClientContactPerson" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Contact Email *</label>
+                                    <input type="email" class="form-control" id="editClientContactEmail" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Contact Phone *</label>
+                                    <input type="tel" class="form-control" id="editClientContactPhone" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Preferred Communication</label>
+                                    <select class="form-select" id="editClientPreferredCommunication">
+                                        <option value="email">Email</option>
+                                        <option value="phone">Phone</option>
+                                        <option value="sms">SMS</option>
+                                        <option value="whatsapp">WhatsApp</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="row">
+                            <!-- Address Information -->
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3"><i class="bi bi-geo-alt me-2"></i>Address Information</h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Address Line 1 *</label>
+                                    <input type="text" class="form-control" id="editClientAddressLine1" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Address Line 2</label>
+                                    <input type="text" class="form-control" id="editClientAddressLine2">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">City *</label>
+                                    <input type="text" class="form-control" id="editClientCity" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">State/Province</label>
+                                    <input type="text" class="form-control" id="editClientStateProvince">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Postal Code</label>
+                                    <input type="text" class="form-control" id="editClientPostalCode">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Country *</label>
+                                    <select class="form-select" id="editClientCountry" required>
+                                        <option value="">Select Country</option>
+                                        <option value="LK">Sri Lanka</option>
+                                        <option value="IN">India</option>
+                                        <option value="US">United States</option>
+                                        <option value="UK">United Kingdom</option>
+                                        <option value="AU">Australia</option>
+                                        <option value="CA">Canada</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="row">
+                            <!-- Business Settings -->
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3"><i class="bi bi-briefcase me-2"></i>Business Settings</h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Contract Type</label>
+                                    <select class="form-select" id="editClientContractType">
+                                        <option value="standard">Standard</option>
+                                        <option value="premium">Premium</option>
+                                        <option value="enterprise">Enterprise</option>
+                                        <option value="custom">Custom</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Payment Terms (days)</label>
+                                    <input type="number" class="form-control" id="editClientPaymentTerms" min="0" max="365">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Credit Limit</label>
+                                    <input type="number" class="form-control" id="editClientCreditLimit" min="0" step="0.01">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Currency</label>
+                                    <select class="form-select" id="editClientCurrency">
+                                        <option value="LKR">Sri Lankan Rupee (LKR)</option>
+                                        <option value="USD">US Dollar (USD)</option>
+                                        <option value="EUR">Euro (EUR)</option>
+                                        <option value="GBP">British Pound (GBP)</option>
+                                        <option value="INR">Indian Rupee (INR)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label class="form-label">Special Requirements</label>
+                                    <textarea class="form-control" id="editClientSpecialRequirements" rows="3" placeholder="Any special handling, delivery instructions, or requirements..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-2"></i>Update Client
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
