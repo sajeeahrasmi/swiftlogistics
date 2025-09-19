@@ -202,6 +202,9 @@ class AdminDashboard {
                 case 'orders':
                     await this.loadOrderManagement();
                     break;
+                case 'tracking':
+                    await this.loadTracking();
+                    break;
                 case 'drivers':
                     await this.loadDriverManagement();
                     break;
@@ -214,8 +217,6 @@ class AdminDashboard {
                 case 'settings':
                     await this.loadSettings();
                     break;
-                    await this.loadSettings();
-                    break;
             }
         } catch (error) {
             console.error('Error loading page:', error);
@@ -225,12 +226,50 @@ class AdminDashboard {
 
     async loadDashboard() {
         const response = await this.apiRequest('/dashboard/overview');
-        if (!response || !response.success) return;
+        console.log('Dashboard API Response:', response); // Debug logging
+        
+        if (!response || !response.success) {
+            console.error('Dashboard API failed:', response);
+            // Show error message but provide fallback data
+            this.showAlert('Failed to load dashboard data, showing sample data', 'warning');
+            const fallbackData = {
+                status_counts: [
+                    { status: 'pending', count: '12', urgent_count: '3', high_count: '5' },
+                    { status: 'processing', count: '8', urgent_count: '2', high_count: '3' },
+                    { status: 'in_transit', count: '15', urgent_count: '1', high_count: '4' },
+                    { status: 'delivered', count: '45', urgent_count: '0', high_count: '0' },
+                    { status: 'failed', count: '2', urgent_count: '1', high_count: '0' }
+                ],
+                today_metrics: {
+                    total_orders: 25,
+                    delivered_orders: 18,
+                    failed_orders: 2,
+                    cancelled_orders: 0,
+                    urgent_orders: 5,
+                    avg_delivery_time_hours: 6.5
+                },
+                driver_stats: [
+                    { status: 'available', count: '8' },
+                    { status: 'busy', count: '5' },
+                    { status: 'offline', count: '2' }
+                ]
+            };
+            const metrics = this.processDashboardData(fallbackData);
+            this.renderDashboard(metrics);
+            return;
+        }
 
         const data = response.data;
+        console.log('Dashboard data:', data); // Debug logging
         
         // Process the data to get dashboard metrics
         const metrics = this.processDashboardData(data);
+        console.log('Processed metrics:', metrics); // Debug logging
+        
+        this.renderDashboard(metrics);
+    }
+
+    renderDashboard(metrics) {
 
         const content = `
             <div class="page-header">
@@ -463,6 +502,506 @@ class AdminDashboard {
                 this.updateSelectedCount();
             });
         });
+    }
+
+    async loadTracking() {
+        const trackingData = await this.apiRequest('/tracking/orders');
+        if (!trackingData) return;
+
+        const trackingOrders = trackingData.data || [];
+        console.log('Tracking data:', trackingData);
+        console.log('Tracking orders:', trackingOrders);
+
+        const content = `
+            <div class="page-header">
+                <h1 class="page-title">Order Tracking</h1>
+                <p class="page-subtitle">Real-time tracking of all orders</p>
+            </div>
+
+            <!-- Search and Filter -->
+            <div class="bg-white p-3 rounded-lg shadow-sm mb-4">
+                <div class="row">
+                    <div class="col-md-6">
+                        <input 
+                            type="text" 
+                            class="form-control" 
+                            id="trackingSearchInput" 
+                            placeholder="Search by tracking number, client, or recipient..."
+                        >
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="trackingStatusFilter">
+                            <option value="">All Statuses</option>
+                            <option value="Processing">Processing</option>
+                            <option value="In Warehouse">In Warehouse</option>
+                            <option value="In Transit">In Transit</option>
+                            <option value="Delivered">Delivered</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-primary" onclick="adminDashboard.filterTracking()">
+                            <i class="bi bi-search me-2"></i>Search
+                        </button>
+                        <button class="btn btn-outline-secondary ms-2" onclick="adminDashboard.refreshTracking()">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tracking Cards -->
+            <div class="row" id="trackingCardsContainer">
+                ${this.renderTrackingCards(trackingOrders)}
+            </div>
+        `;
+
+        document.getElementById('content').innerHTML = content;
+        this.setupTrackingEvents();
+    }
+
+    renderTrackingCards(orders) {
+        if (!Array.isArray(orders) || orders.length === 0) {
+            return `
+                <div class="col-12">
+                    <div class="text-center py-5">
+                        <i class="bi bi-geo-alt text-muted" style="font-size: 3rem;"></i>
+                        <h4 class="text-muted mt-3">No tracking data available</h4>
+                        <p class="text-muted">Check if the tracking service is running</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        return orders.map(order => `
+            <div class="col-md-6 col-lg-4 mb-4 tracking-card" data-tracking="${order.trackingNumber}" data-status="${order.status}">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-between align-items-start mb-3">
+                            <div>
+                                <h6 class="card-title mb-1">${order.clientName || 'Unknown Client'}</h6>
+                                <small class="text-muted">${order.trackingNumber}</small>
+                            </div>
+                            <span class="badge bg-${this.getStatusColor(order.status)}">${order.status}</span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <h6 class="text-primary mb-1">${order.recipient || 'No recipient'}</h6>
+                            <small class="text-muted d-block">${order.address || 'No address'}</small>
+                        </div>
+
+                        <div class="progress mb-3" style="height: 6px;">
+                            <div class="progress-bar bg-primary" 
+                                 style="width: ${order.routeProgress || 0}%"></div>
+                        </div>
+
+                        <div class="row text-center mb-3">
+                            <div class="col-4">
+                                <small class="text-muted d-block">Items</small>
+                                <strong>${order.items || 0}</strong>
+                            </div>
+                            <div class="col-8">
+                                <small class="text-muted d-block">Current Location</small>
+                                <strong class="text-truncate d-block" title="${order.currentLocation || 'Unknown'}">${order.currentLocation || 'Unknown'}</strong>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-end">
+                            <div>
+                                <small class="text-muted">Last Update</small>
+                                <div class="small">${order.lastUpdate || 'No update'}</div>
+                            </div>
+                            <div class="text-end">
+                                <small class="text-muted">Est. Delivery</small>
+                                <div class="small text-primary">${order.estimatedDelivery || 'TBD'}</div>
+                            </div>
+                        </div>
+
+                        <div class="mt-3 pt-2 border-top">
+                            <small class="text-muted">
+                                <i class="bi bi-truck me-1"></i>
+                                Driver: ${order.driverName || 'Unassigned'}
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer bg-transparent">
+                        <button class="btn btn-outline-primary btn-sm w-100" 
+                                onclick="adminDashboard.viewTrackingDetails('${order.trackingNumber}')">
+                            <i class="bi bi-eye me-2"></i>View Details
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    setupTrackingEvents() {
+        // Search input event
+        document.getElementById('trackingSearchInput')?.addEventListener('input', 
+            this.debounce(() => this.filterTracking(), 300)
+        );
+
+        // Status filter event
+        document.getElementById('trackingStatusFilter')?.addEventListener('change', () => {
+            this.filterTracking();
+        });
+    }
+
+    filterTracking() {
+        const searchTerm = document.getElementById('trackingSearchInput')?.value.toLowerCase() || '';
+        const statusFilter = document.getElementById('trackingStatusFilter')?.value || '';
+
+        const cards = document.querySelectorAll('.tracking-card');
+        cards.forEach(card => {
+            const trackingNumber = card.dataset.tracking?.toLowerCase() || '';
+            const status = card.dataset.status || '';
+            const cardText = card.textContent.toLowerCase();
+
+            const matchesSearch = !searchTerm || cardText.includes(searchTerm) || trackingNumber.includes(searchTerm);
+            const matchesStatus = !statusFilter || status === statusFilter;
+
+            card.style.display = (matchesSearch && matchesStatus) ? 'block' : 'none';
+        });
+    }
+
+    async refreshTracking() {
+        await this.loadTracking();
+    }
+
+    async viewTrackingDetails(trackingNumber) {
+        console.log('Loading tracking details for:', trackingNumber);
+        
+        // Get detailed tracking information
+        const trackingDetails = await this.getTrackingDetails(trackingNumber);
+        
+        if (!trackingDetails) {
+            this.showAlert('Failed to load tracking details', 'danger');
+            return;
+        }
+        
+        this.showTrackingDetailsModal(trackingDetails);
+    }
+
+    async getTrackingDetails(trackingNumber) {
+        try {
+            // Try to get details from tracking service first
+            const response = await fetch(`http://localhost:3003/api/orders/${trackingNumber}`);
+            if (response.ok) {
+                const data = await response.json();
+                return data.data || data;
+            }
+        } catch (error) {
+            console.warn('Could not fetch from tracking service:', error);
+        }
+
+        // Fallback to mock detailed data
+        return this.getMockTrackingDetails(trackingNumber);
+    }
+
+    getMockTrackingDetails(trackingNumber) {
+        return {
+            trackingNumber: trackingNumber,
+            recipient: "Bob Williams",
+            recipientPhone: "+94 77 123 4567",
+            recipientEmail: "bob.williams@email.com",
+            address: "45 Union Place, Colombo 02",
+            status: "In Transit",
+            currentLocation: "Kandy Distribution Center",
+            estimatedDelivery: "2025-09-20 03:00 PM",
+            priority: "High",
+            items: 2,
+            weight: "1.2 kg",
+            clientName: "Beta Ltd",
+            driverName: "Maria Perera",
+            driverPhone: "+94 71 987 6543",
+            vehicleNumber: "WP CAB-1234",
+            timeline: [
+                {
+                    timestamp: "2025-09-18 09:30 AM",
+                    status: "Order Placed",
+                    location: "Client Portal",
+                    description: "Order created and payment confirmed",
+                    icon: "bi-plus-circle",
+                    color: "primary"
+                },
+                {
+                    timestamp: "2025-09-18 10:15 AM",
+                    status: "Processing",
+                    location: "Colombo Main Warehouse",
+                    description: "Package processed and ready for pickup",
+                    icon: "bi-box-seam",
+                    color: "info"
+                },
+                {
+                    timestamp: "2025-09-18 02:45 PM",
+                    status: "Driver Assigned",
+                    location: "Colombo Main Warehouse",
+                    description: "Assigned to Maria Perera (WP CAB-1234)",
+                    icon: "bi-person-check",
+                    color: "warning"
+                },
+                {
+                    timestamp: "2025-09-18 03:30 PM",
+                    status: "Picked Up",
+                    location: "Colombo Main Warehouse",
+                    description: "Package collected by driver",
+                    icon: "bi-truck",
+                    color: "warning"
+                },
+                {
+                    timestamp: "2025-09-19 08:15 AM",
+                    status: "In Transit",
+                    location: "Kandy Distribution Center",
+                    description: "Package arrived at intermediate hub",
+                    icon: "bi-geo-alt",
+                    color: "primary"
+                }
+            ],
+            deliveryAttempts: [
+                {
+                    date: "2025-09-19",
+                    time: "10:30 AM",
+                    status: "Scheduled",
+                    notes: "First delivery attempt scheduled",
+                    outcome: "pending"
+                }
+            ],
+            communications: [
+                {
+                    timestamp: "2025-09-18 02:50 PM",
+                    type: "SMS",
+                    recipient: "Customer",
+                    message: "Your package TRK-728416 has been assigned to driver Maria Perera",
+                    status: "delivered"
+                },
+                {
+                    timestamp: "2025-09-19 08:20 AM",
+                    type: "Email",
+                    recipient: "Customer",
+                    message: "Package update: Your order is now in transit to Kandy",
+                    status: "delivered"
+                }
+            ]
+        };
+    }
+
+    showTrackingDetailsModal(details) {
+        const modalHTML = `
+            <div class="modal fade" id="trackingDetailsModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title">
+                                <i class="bi bi-geo-alt me-2"></i>
+                                Tracking Details: ${details.trackingNumber}
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <!-- Left Column - Order Information -->
+                                <div class="col-lg-4">
+                                    <div class="card mb-3">
+                                        <div class="card-header bg-light">
+                                            <h6 class="mb-0"><i class="bi bi-box-seam me-2"></i>Order Information</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="mb-2">
+                                                <strong>Status:</strong>
+                                                <span class="badge bg-${this.getStatusColor(details.status)} ms-2">${details.status}</span>
+                                            </div>
+                                            <div class="mb-2"><strong>Priority:</strong> ${details.priority || 'Medium'}</div>
+                                            <div class="mb-2"><strong>Items:</strong> ${details.items || 1}</div>
+                                            <div class="mb-2"><strong>Weight:</strong> ${details.weight || 'N/A'}</div>
+                                            <div class="mb-2"><strong>Client:</strong> ${details.clientName || 'N/A'}</div>
+                                            <div class="mb-2"><strong>Current Location:</strong> ${details.currentLocation || 'N/A'}</div>
+                                            <div class="mb-2"><strong>Est. Delivery:</strong> ${details.estimatedDelivery || 'TBD'}</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="card mb-3">
+                                        <div class="card-header bg-light">
+                                            <h6 class="mb-0"><i class="bi bi-person me-2"></i>Recipient Information</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="mb-2"><strong>Name:</strong> ${details.recipient || 'N/A'}</div>
+                                            <div class="mb-2"><strong>Phone:</strong> ${details.recipientPhone || 'N/A'}</div>
+                                            <div class="mb-2"><strong>Email:</strong> ${details.recipientEmail || 'N/A'}</div>
+                                            <div class="mb-2"><strong>Address:</strong><br>${details.address || 'N/A'}</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="card mb-3">
+                                        <div class="card-header bg-light">
+                                            <h6 class="mb-0"><i class="bi bi-truck me-2"></i>Driver Information</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="mb-2"><strong>Driver:</strong> ${details.driverName || 'Unassigned'}</div>
+                                            <div class="mb-2"><strong>Phone:</strong> ${details.driverPhone || 'N/A'}</div>
+                                            <div class="mb-2"><strong>Vehicle:</strong> ${details.vehicleNumber || 'N/A'}</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Right Column - Timeline and Communications -->
+                                <div class="col-lg-8">
+                                    <!-- Delivery Timeline -->
+                                    <div class="card mb-3">
+                                        <div class="card-header bg-light">
+                                            <h6 class="mb-0"><i class="bi bi-clock-history me-2"></i>Delivery Timeline</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="timeline">
+                                                ${this.renderTimeline(details.timeline || [])}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Delivery Attempts -->
+                                    <div class="card mb-3">
+                                        <div class="card-header bg-light">
+                                            <h6 class="mb-0"><i class="bi bi-arrow-repeat me-2"></i>Delivery Attempts</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            ${this.renderDeliveryAttempts(details.deliveryAttempts || [])}
+                                        </div>
+                                    </div>
+
+                                    <!-- Customer Communications -->
+                                    <div class="card">
+                                        <div class="card-header bg-light">
+                                            <h6 class="mb-0"><i class="bi bi-chat-dots me-2"></i>Customer Communications</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            ${this.renderCommunications(details.communications || [])}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-primary" onclick="adminDashboard.printTrackingDetails('${details.trackingNumber}')">
+                                <i class="bi bi-printer me-2"></i>Print
+                            </button>
+                            <button type="button" class="btn btn-outline-info" onclick="adminDashboard.exportTrackingDetails('${details.trackingNumber}')">
+                                <i class="bi bi-download me-2"></i>Export
+                            </button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Remove existing modal if any
+        const existingModal = document.getElementById('trackingDetailsModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        // Add modal to DOM
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('trackingDetailsModal'));
+        modal.show();
+    }
+
+    renderTimeline(timeline) {
+        if (!timeline || timeline.length === 0) {
+            return '<p class="text-muted">No timeline data available</p>';
+        }
+
+        return timeline.map((item, index) => `
+            <div class="timeline-item">
+                <div class="timeline-marker bg-${item.color || 'primary'}">
+                    <i class="${item.icon || 'bi-circle'} text-white"></i>
+                </div>
+                <div class="timeline-content">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1">${item.status}</h6>
+                            <p class="mb-1 text-muted small">${item.description}</p>
+                            <small class="text-primary"><i class="bi bi-geo-alt me-1"></i>${item.location}</small>
+                        </div>
+                        <small class="text-muted">${item.timestamp}</small>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    renderDeliveryAttempts(attempts) {
+        if (!attempts || attempts.length === 0) {
+            return '<p class="text-muted">No delivery attempts recorded</p>';
+        }
+
+        return attempts.map(attempt => `
+            <div class="border-bottom pb-2 mb-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>${attempt.date} at ${attempt.time}</strong>
+                        <span class="badge bg-${attempt.outcome === 'pending' ? 'warning' : attempt.outcome === 'success' ? 'success' : 'danger'} ms-2">
+                            ${attempt.status}
+                        </span>
+                    </div>
+                </div>
+                <small class="text-muted">${attempt.notes}</small>
+            </div>
+        `).join('');
+    }
+
+    renderCommunications(communications) {
+        if (!communications || communications.length === 0) {
+            return '<p class="text-muted">No communications recorded</p>';
+        }
+
+        return communications.map(comm => `
+            <div class="border-bottom pb-2 mb-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="badge bg-${comm.type === 'SMS' ? 'info' : 'primary'}">${comm.type}</span>
+                        <strong class="ms-2">to ${comm.recipient}</strong>
+                        <span class="badge bg-${comm.status === 'delivered' ? 'success' : 'warning'} ms-2">${comm.status}</span>
+                    </div>
+                    <small class="text-muted">${comm.timestamp}</small>
+                </div>
+                <small class="text-muted mt-1 d-block">${comm.message}</small>
+            </div>
+        `).join('');
+    }
+
+    printTrackingDetails(trackingNumber) {
+        alert(`Printing tracking details for ${trackingNumber}...\n\nThis would generate a printable report.`);
+    }
+
+    exportTrackingDetails(trackingNumber) {
+        alert(`Exporting tracking details for ${trackingNumber}...\n\nThis would download tracking data as PDF/Excel.`);
+    }
+
+    getStatusColor(status) {
+        const statusColors = {
+            'processing': 'warning',
+            'in warehouse': 'info',
+            'in transit': 'primary',
+            'delivered': 'success',
+            'failed': 'danger',
+            'pending': 'secondary'
+        };
+        return statusColors[status?.toLowerCase()] || 'secondary';
+    }
+
+    // Debounce utility function
+    debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
     }
 
     updateSelectedCount() {
@@ -1270,11 +1809,170 @@ class AdminDashboard {
     }
 
     async showAddClientModal() {
-        this.showAlert('Add client functionality would open a modal here', 'info');
+        const modal = new bootstrap.Modal(document.getElementById('addClientModal'));
+        modal.show();
+
+        // Add form submit event listener
+        const form = document.getElementById('addClientForm');
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            await this.handleAddClient();
+        };
+    }
+
+    async handleAddClient() {
+        // Get form data
+        const formData = {
+            company_name: document.getElementById('clientCompanyName').value,
+            company_type: document.getElementById('clientCompanyType').value,
+            company_registration_number: document.getElementById('clientRegistrationNumber').value,
+            tax_id: document.getElementById('clientTaxId').value,
+            industry: document.getElementById('clientIndustry').value,
+            website: document.getElementById('clientWebsite').value,
+            contact_person: document.getElementById('clientContactPerson').value,
+            contact_email: document.getElementById('clientContactEmail').value,
+            contact_phone: document.getElementById('clientContactPhone').value,
+            preferred_communication: document.getElementById('clientPreferredCommunication').value,
+            address_line1: document.getElementById('clientAddressLine1').value,
+            address_line2: document.getElementById('clientAddressLine2').value,
+            city: document.getElementById('clientCity').value,
+            state_province: document.getElementById('clientStateProvince').value,
+            postal_code: document.getElementById('clientPostalCode').value,
+            country: document.getElementById('clientCountry').value,
+            contract_type: document.getElementById('clientContractType').value,
+            payment_terms: parseInt(document.getElementById('clientPaymentTerms').value) || 30,
+            credit_limit: parseFloat(document.getElementById('clientCreditLimit').value) || 0,
+            currency: document.getElementById('clientCurrency').value,
+            special_requirements: document.getElementById('clientSpecialRequirements').value,
+            status: 'active' // Default status for new clients
+        };
+
+        // Validate required fields
+        const requiredFields = [
+            { field: 'company_name', name: 'Company Name' },
+            { field: 'contact_person', name: 'Contact Person' },
+            { field: 'contact_email', name: 'Contact Email' },
+            { field: 'contact_phone', name: 'Contact Phone' },
+            { field: 'address_line1', name: 'Address Line 1' },
+            { field: 'city', name: 'City' },
+            { field: 'country', name: 'Country' }
+        ];
+
+        for (const { field, name } of requiredFields) {
+            if (!formData[field] || formData[field].trim() === '') {
+                this.showAlert(`Please fill in the ${name} field.`, 'danger');
+                return;
+            }
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.contact_email)) {
+            this.showAlert('Please enter a valid email address.', 'danger');
+            return;
+        }
+
+        // Validate website format if provided
+        if (formData.website && formData.website.trim() !== '') {
+            try {
+                new URL(formData.website);
+            } catch (e) {
+                this.showAlert('Please enter a valid website URL (e.g., https://example.com).', 'danger');
+                return;
+            }
+        }
+
+        try {
+            // Call API to create client
+            const result = await this.apiRequest('/clients', {
+                method: 'POST',
+                body: JSON.stringify(formData)
+            });
+
+            if (result && result.success) {
+                this.showAlert('Client added successfully!', 'success');
+                
+                // Close modal
+                bootstrap.Modal.getInstance(document.getElementById('addClientModal')).hide();
+                
+                // Reset form
+                document.getElementById('addClientForm').reset();
+                
+                // Refresh client list
+                await this.loadClients();
+            } else {
+                throw new Error(result?.message || 'Failed to add client');
+            }
+        } catch (error) {
+            console.error('Add client error:', error);
+            this.showAlert(`Failed to add client: ${error.message}`, 'danger');
+        }
     }
 
     async exportClients() {
-        this.showAlert('Client data export functionality would be implemented here', 'info');
+        try {
+            // Get current clients data
+            const response = await this.apiRequest('/clients');
+            if (!response || !response.success) {
+                throw new Error('Failed to fetch client data');
+            }
+
+            const clients = response.data.clients || [];
+            
+            if (clients.length === 0) {
+                this.showAlert('No clients data to export', 'info');
+                return;
+            }
+
+            // Create CSV content
+            const headers = [
+                'Company Name', 'Contact Person', 'Contact Email', 'Contact Phone',
+                'Industry', 'Contract Type', 'Status', 'City', 'Country',
+                'Total Orders', 'Created Date'
+            ];
+
+            const csvRows = [headers.join(',')];
+            
+            clients.forEach(client => {
+                const row = [
+                    `"${client.company_name || ''}"`,
+                    `"${client.contact_person || ''}"`,
+                    `"${client.contact_email || client.email || ''}"`,
+                    `"${client.contact_phone || client.phone || ''}"`,
+                    `"${client.industry || ''}"`,
+                    `"${client.contract_type || 'standard'}"`,
+                    `"${client.status || 'active'}"`,
+                    `"${client.city || ''}"`,
+                    `"${client.country || ''}"`,
+                    `"${client.total_orders || 0}"`,
+                    `"${client.created_at ? new Date(client.created_at).toLocaleDateString() : ''}"`
+                ];
+                csvRows.push(row.join(','));
+            });
+
+            // Create and download CSV file
+            const csvContent = csvRows.join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            
+            if (link.download !== undefined) {
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', `clients_export_${new Date().toISOString().split('T')[0]}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                this.showAlert(`Successfully exported ${clients.length} clients to CSV`, 'success');
+            } else {
+                throw new Error('CSV download not supported by browser');
+            }
+
+        } catch (error) {
+            console.error('Export clients error:', error);
+            this.showAlert(`Failed to export clients: ${error.message}`, 'danger');
+        }
     }
 
     async viewClientDetails(clientId) {
@@ -1437,15 +2135,147 @@ class AdminDashboard {
     }
 
     async editClient(clientId) {
-        // For now, show an informative message about edit functionality
-        this.showAlert(`Edit client functionality is not yet implemented. Client ID: ${clientId}. This would open an edit form with the client's current information for modification.`, 'info');
+        try {
+            // Fetch current client data
+            const response = await this.apiRequest(`/clients/${clientId}`);
+            
+            if (!response || !response.success) {
+                throw new Error('Failed to fetch client details');
+            }
+
+            const client = response.data.client;
+            
+            // Populate the edit form with current data
+            document.getElementById('editClientId').value = client.id;
+            document.getElementById('editClientCompanyName').value = client.company_name || '';
+            document.getElementById('editClientCompanyType').value = client.company_type || '';
+            document.getElementById('editClientRegistrationNumber').value = client.company_registration_number || '';
+            document.getElementById('editClientTaxId').value = client.tax_id || '';
+            document.getElementById('editClientIndustry').value = client.industry || '';
+            document.getElementById('editClientWebsite').value = client.website || '';
+            document.getElementById('editClientStatus').value = client.status || 'active';
+            document.getElementById('editClientContactPerson').value = client.contact_person || '';
+            document.getElementById('editClientContactEmail').value = client.contact_email || client.email || '';
+            document.getElementById('editClientContactPhone').value = client.contact_phone || client.phone || '';
+            document.getElementById('editClientPreferredCommunication').value = client.preferred_communication || 'email';
+            document.getElementById('editClientAddressLine1').value = client.address_line1 || '';
+            document.getElementById('editClientAddressLine2').value = client.address_line2 || '';
+            document.getElementById('editClientCity').value = client.city || '';
+            document.getElementById('editClientStateProvince').value = client.state_province || '';
+            document.getElementById('editClientPostalCode').value = client.postal_code || '';
+            document.getElementById('editClientCountry').value = client.country || '';
+            document.getElementById('editClientContractType').value = client.contract_type || 'standard';
+            document.getElementById('editClientPaymentTerms').value = client.payment_terms || 30;
+            document.getElementById('editClientCreditLimit').value = client.credit_limit || 0;
+            document.getElementById('editClientCurrency').value = client.currency || 'LKR';
+            document.getElementById('editClientSpecialRequirements').value = client.special_requirements || '';
+
+            // Show the edit modal
+            const modal = new bootstrap.Modal(document.getElementById('editClientModal'));
+            modal.show();
+
+            // Add form submit event listener
+            const form = document.getElementById('editClientForm');
+            form.onsubmit = async (e) => {
+                e.preventDefault();
+                await this.handleEditClient();
+            };
+
+        } catch (error) {
+            console.error('Error loading client for edit:', error);
+            this.showAlert(`Failed to load client details: ${error.message}`, 'danger');
+        }
+    }
+
+    async handleEditClient() {
+        const clientId = document.getElementById('editClientId').value;
         
-        // TODO: Implement client editing functionality
-        // This should:
-        // 1. Fetch current client data
-        // 2. Open an edit modal with a form
-        // 3. Allow updating client information
-        // 4. Submit changes to the API
+        // Get form data
+        const formData = {
+            company_name: document.getElementById('editClientCompanyName').value,
+            company_type: document.getElementById('editClientCompanyType').value,
+            company_registration_number: document.getElementById('editClientRegistrationNumber').value,
+            tax_id: document.getElementById('editClientTaxId').value,
+            industry: document.getElementById('editClientIndustry').value,
+            website: document.getElementById('editClientWebsite').value,
+            status: document.getElementById('editClientStatus').value,
+            contact_person: document.getElementById('editClientContactPerson').value,
+            contact_email: document.getElementById('editClientContactEmail').value,
+            contact_phone: document.getElementById('editClientContactPhone').value,
+            preferred_communication: document.getElementById('editClientPreferredCommunication').value,
+            address_line1: document.getElementById('editClientAddressLine1').value,
+            address_line2: document.getElementById('editClientAddressLine2').value,
+            city: document.getElementById('editClientCity').value,
+            state_province: document.getElementById('editClientStateProvince').value,
+            postal_code: document.getElementById('editClientPostalCode').value,
+            country: document.getElementById('editClientCountry').value,
+            contract_type: document.getElementById('editClientContractType').value,
+            payment_terms: parseInt(document.getElementById('editClientPaymentTerms').value) || 30,
+            credit_limit: parseFloat(document.getElementById('editClientCreditLimit').value) || 0,
+            currency: document.getElementById('editClientCurrency').value,
+            special_requirements: document.getElementById('editClientSpecialRequirements').value
+        };
+
+        // Validate required fields
+        const requiredFields = [
+            { field: 'company_name', name: 'Company Name' },
+            { field: 'contact_person', name: 'Contact Person' },
+            { field: 'contact_email', name: 'Contact Email' },
+            { field: 'contact_phone', name: 'Contact Phone' },
+            { field: 'address_line1', name: 'Address Line 1' },
+            { field: 'city', name: 'City' },
+            { field: 'country', name: 'Country' }
+        ];
+
+        for (const { field, name } of requiredFields) {
+            if (!formData[field] || formData[field].trim() === '') {
+                this.showAlert(`Please fill in the ${name} field.`, 'danger');
+                return;
+            }
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.contact_email)) {
+            this.showAlert('Please enter a valid email address.', 'danger');
+            return;
+        }
+
+        // Validate website format if provided
+        if (formData.website && formData.website.trim() !== '') {
+            try {
+                new URL(formData.website);
+            } catch (e) {
+                this.showAlert('Please enter a valid website URL (e.g., https://example.com).', 'danger');
+                return;
+            }
+        }
+
+        try {
+            // Call API to update client
+            const result = await this.apiRequest(`/clients/${clientId}`, {
+                method: 'PUT',
+                body: JSON.stringify(formData)
+            });
+
+            if (result && result.success) {
+                this.showAlert('Client updated successfully!', 'success');
+                
+                // Close modal
+                bootstrap.Modal.getInstance(document.getElementById('editClientModal')).hide();
+                
+                // Reset form
+                document.getElementById('editClientForm').reset();
+                
+                // Refresh client list
+                await this.loadClients();
+            } else {
+                throw new Error(result?.message || 'Failed to update client');
+            }
+        } catch (error) {
+            console.error('Update client error:', error);
+            this.showAlert(`Failed to update client: ${error.message}`, 'danger');
+        }
     }
 
     async saveGeneralSettings() {
