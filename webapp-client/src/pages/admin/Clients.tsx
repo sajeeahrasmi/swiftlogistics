@@ -124,12 +124,13 @@ const Clients: React.FC = () => {
           <input
             type="text"
             placeholder="Search clients..."
-            className="pl-3 pr-4 py-2 border border-gray-300 rounded-md w-64 focus:outline-none focus:ring-2 focus:ring-amber-500"
+            className="pl-3 pr-4 py-2 border border-gray-300 rounded-md w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
           <button
-            className="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2 rounded-md"
+            className="text-white px-4 py-2 rounded-md transition-all duration-300 transform hover:translate-x-1"
+            style={{background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', boxShadow: '0 4px 6px rgba(102, 126, 234, 0.3)'}}
             onClick={() => setShowAddModal(true)}
           >
             Add New Client
@@ -139,10 +140,10 @@ const Clients: React.FC = () => {
         {/* Table */}
         <div className="bg-white rounded-lg shadow overflow-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-amber-50">
+            <thead style={{background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)'}}>
               <tr>
                 {["Company", "Contact", "Contract", "Billing", "Value (LKR)", "Status", "Actions"].map((title) => (
-                  <th key={title} className="px-6 py-3 text-left text-xs font-medium text-amber-800 uppercase tracking-wider">{title}</th>
+                  <th key={title} className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{color: '#667eea'}}>{title}</th>
                 ))}
               </tr>
             </thead>
@@ -174,7 +175,7 @@ const Clients: React.FC = () => {
                     }`}>{client.status}</span>
                   </td>
                   <td className="px-6 py-4 text-sm font-medium">
-                    <button className="text-amber-600 hover:text-amber-900 mr-3" onClick={() => handleEdit(client)}>Edit</button>
+                    <button className="mr-3 transition-colors duration-300" style={{color: '#667eea'}} onMouseEnter={(e) => e.currentTarget.style.color = '#764ba2'} onMouseLeave={(e) => e.currentTarget.style.color = '#667eea'} onClick={() => handleEdit(client)}>Edit</button>
                     <button className="text-red-600 hover:text-red-900" onClick={() => handleDelete(client.id)}>Delete</button>
                   </td>
                 </tr>
@@ -261,7 +262,7 @@ const Clients: React.FC = () => {
               </div>
               <div className="flex justify-end mt-4 space-x-3">
                 <button className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50" onClick={() => setShowAddModal(false)}>Cancel</button>
-                <button className="px-4 py-2 bg-amber-700 text-white rounded-md hover:bg-amber-800" onClick={handleAdd}>Add Client</button>
+                <button className="px-4 py-2 text-white rounded-md transition-all duration-300 transform hover:translate-x-1" style={{background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', boxShadow: '0 4px 6px rgba(102, 126, 234, 0.3)'}} onClick={handleAdd}>Add Client</button>
               </div>
             </div>
           </div>
@@ -345,7 +346,7 @@ const Clients: React.FC = () => {
               </div>
               <div className="flex justify-end mt-4 space-x-3">
                 <button className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50" onClick={() => setShowEditModal(false)}>Cancel</button>
-                <button className="px-4 py-2 bg-amber-700 text-white rounded-md hover:bg-amber-800" onClick={handleUpdate}>Save Changes</button>
+                <button className="px-4 py-2 text-white rounded-md transition-all duration-300 transform hover:translate-x-1" style={{background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', boxShadow: '0 4px 6px rgba(102, 126, 234, 0.3)'}} onClick={handleUpdate}>Save Changes</button>
               </div>
             </div>
           </div>

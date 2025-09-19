@@ -174,7 +174,7 @@ const Tracking: React.FC = () => {
     switch(status) {
       case 'Delivered': return 'bg-green-100 text-green-800';
       case 'Processing': return 'bg-purple-100 text-purple-800';
-      case 'In Warehouse': return 'bg-amber-100 text-amber-800';
+      case 'In Warehouse': return 'bg-blue-100 text-blue-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -214,8 +214,8 @@ const Tracking: React.FC = () => {
     <div className="p-6 flex-1 ml-64">
       <Sidebar role="client" />
       <div className="max-w-7xl mx-auto">
-        <h2 className="text-3xl font-bold text-amber-900 mb-2">Package Tracking</h2>
-        <p className="text-amber-700 mb-6">Monitor your deliveries in real-time</p>
+        <h2 className="text-3xl font-bold mb-2" style={{background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>Package Tracking</h2>
+        <p className="mb-6" style={{color: '#667eea'}}>Monitor your deliveries in real-time</p>
 
         {/* Search and Filter Section */}
         <div className="bg-white p-6 rounded-lg shadow-md mb-6">
@@ -225,7 +225,7 @@ const Tracking: React.FC = () => {
                 <input
                   type="text"
                   placeholder="Search by tracking number or recipient..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
@@ -240,7 +240,7 @@ const Tracking: React.FC = () => {
             
             <div className="flex space-x-4 w-full md:w-auto">
               <select 
-                className="flex-1 md:flex-none border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                className="flex-1 md:flex-none border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 value={statusFilter}
                 onChange={(e) => {
                   setStatusFilter(e.target.value);
@@ -255,7 +255,8 @@ const Tracking: React.FC = () => {
               
               <button
                 onClick={refreshOrders}
-                className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition-colors"
+                className="px-4 py-2 text-white rounded-lg transition-colors transform hover:translate-x-1"
+                style={{background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', boxShadow: '0 4px 6px rgba(102, 126, 234, 0.3)'}}
                 title="Refresh orders"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -280,7 +281,7 @@ const Tracking: React.FC = () => {
         {/* Loading State */}
         {loading ? (
           <div className="text-center py-12 bg-white rounded-lg shadow-md">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{borderColor: '#667eea'}}></div>
             <h3 className="text-lg font-medium text-gray-900">Loading tracking data...</h3>
             <p className="text-sm text-gray-500">Please wait while we fetch your orders</p>
           </div>
@@ -293,7 +294,7 @@ const Tracking: React.FC = () => {
               <div className="p-5 flex-1">
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <h3 className="text-lg font-semibold text-amber-900 truncate">{order.recipient}</h3>
+                    <h3 className="text-lg font-semibold truncate" style={{color: '#667eea'}}>{order.recipient}</h3>
                     <p className="text-sm text-gray-600">{order.trackingNumber}</p>
                   </div>
                   <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
@@ -304,17 +305,17 @@ const Tracking: React.FC = () => {
 
                 <div className="mb-4">
                   <h4 className="text-sm font-medium text-gray-600 mb-1">Delivery Address</h4>
-                  <p className="text-sm text-amber-900 truncate">{order.address}</p>
+                  <p className="text-sm truncate" style={{color: '#667eea'}}>{order.address}</p>
                 </div>
 
                 <div className="mb-4">
                   <h4 className="text-sm font-medium text-gray-600 mb-1">Estimated Delivery</h4>
-                  <p className="text-sm text-amber-900">{order.estimatedDelivery}</p>
+                  <p className="text-sm" style={{color: '#667eea'}}>{order.estimatedDelivery}</p>
                 </div>
 
                 <div className="mb-4">
                   <h4 className="text-sm font-medium text-gray-600 mb-1">Current Location</h4>
-                  <p className="text-sm text-amber-900 truncate">{order.currentLocation}</p>
+                  <p className="text-sm truncate" style={{color: '#667eea'}}>{order.currentLocation}</p>
                 </div>
 
                 {/* Progress Bar */}
@@ -325,8 +326,11 @@ const Tracking: React.FC = () => {
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2.5">
                     <div 
-                      className="bg-amber-600 h-2.5 rounded-full transition-all duration-300" 
-                      style={{ width: `${order.routeProgress}%` }}
+                      className="h-2.5 rounded-full transition-all duration-300" 
+                      style={{
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        width: `${order.routeProgress}%`
+                      }}
                     ></div>
                   </div>
                 </div>
@@ -366,11 +370,12 @@ const Tracking: React.FC = () => {
                 <button
                   onClick={() => paginate(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className={`px-3 py-1 rounded-md ${
+                  className={`px-3 py-1 rounded-md transition-all duration-300 ${
                     currentPage === 1
                       ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                      : 'text-white/80 hover:text-white hover:bg-white/15 transform hover:translate-x-1'
                   }`}
+                  style={currentPage !== 1 ? {background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%)'} : {}}
                 >
                   Previous
                 </button>
@@ -379,11 +384,15 @@ const Tracking: React.FC = () => {
                   <button
                     key={number}
                     onClick={() => paginate(number)}
-                    className={`px-3 py-1 rounded-md ${
+                    className={`px-3 py-1 rounded-md transition-all duration-300 ${
                       currentPage === number
-                        ? 'bg-amber-600 text-white'
-                        : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                        ? 'text-white'
+                        : 'text-white/80 hover:text-white hover:bg-white/15 transform hover:translate-x-1'
                     }`}
+                    style={currentPage === number 
+                      ? {background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'} 
+                      : {background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%)'}
+                    }
                   >
                     {number}
                   </button>
@@ -392,11 +401,12 @@ const Tracking: React.FC = () => {
                   <button
                     onClick={() => paginate(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className={`px-3 py-1 rounded-md ${
+                    className={`px-3 py-1 rounded-md transition-all duration-300 ${
                       currentPage === totalPages
                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                        : 'text-white/80 hover:text-white hover:bg-white/15 transform hover:translate-x-1'
                     }`}
+                    style={currentPage !== totalPages ? {background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%)'} : {}}
                   >
                     Next
                   </button>

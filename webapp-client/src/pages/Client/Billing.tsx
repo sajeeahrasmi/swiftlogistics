@@ -196,10 +196,10 @@ const Billing: React.FC = () => {
        <Sidebar role="client" />
       <div className="p-6 flex-1 ml-64">
         <div className="flex justify-between items-center mb-2">
-          <h2 className="text-3xl font-bold text-amber-900">Billing</h2>
+          <h2 className="text-3xl font-bold" style={{background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>Billing</h2>
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <label htmlFor="clientId" className="text-sm font-medium text-amber-900">
+              <label htmlFor="clientId" className="text-sm font-medium" style={{color: '#667eea'}}>
                 Client ID:
               </label>
               <input
@@ -207,13 +207,14 @@ const Billing: React.FC = () => {
                 type="number"
                 value={clientId}
                 onChange={(e) => setClientId(parseInt(e.target.value) || 6)}
-                className="w-20 px-2 py-1 border border-amber-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-20 px-2 py-1 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" style={{borderColor: '#667eea'}}
                 min="1"
               />
             </div>
             <button
               onClick={() => window.location.reload()}
-              className="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2 rounded-lg flex items-center transition duration-300"
+              className="text-white px-4 py-2 rounded-lg flex items-center transition duration-300 transform hover:translate-x-1"
+              style={{background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', boxShadow: '0 4px 6px rgba(102, 126, 234, 0.3)'}}
               disabled={loading}
             >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -242,7 +243,7 @@ const Billing: React.FC = () => {
         {/* Billing Summary */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
           <div className="bg-white p-6 rounded-lg shadow-md">
-            <h3 className="text-lg font-semibold text-amber-900 mb-2">Total Balance</h3>
+            <h3 className="text-lg font-semibold mb-2" style={{color: '#667eea'}}>Total Balance</h3>
             {loading ? (
               <div className="animate-pulse">
                 <div className="h-8 bg-gray-200 rounded mb-2"></div>
@@ -250,7 +251,7 @@ const Billing: React.FC = () => {
               </div>
             ) : (
               <>
-                <p className="text-3xl font-bold text-amber-700">
+                <p className="text-3xl font-bold text-black-700">
                   LKR {summary.totalBalance.toLocaleString()}
                 </p>
                 <p className="text-sm text-gray-600 mt-1">Updated just now</p>
@@ -258,7 +259,7 @@ const Billing: React.FC = () => {
             )}
           </div>
           <div className="bg-white p-6 rounded-lg shadow-md">
-            <h3 className="text-lg font-semibold text-amber-900 mb-2">Pending Invoices</h3>
+            <h3 className="text-lg font-semibold mb-2" style={{color: '#667eea'}}>Pending Invoices</h3>
             {loading ? (
               <div className="animate-pulse">
                 <div className="h-8 bg-gray-200 rounded mb-2"></div>
@@ -266,7 +267,7 @@ const Billing: React.FC = () => {
               </div>
             ) : (
               <>
-                <p className="text-3xl font-bold text-amber-700">{summary.pendingInvoices}</p>
+                <p className="text-3xl font-bold text-black-700">{summary.pendingInvoices}</p>
                 <p className="text-sm text-gray-600 mt-1">
                   LKR {summary.pendingAmount.toLocaleString()} total
                 </p>
@@ -288,13 +289,28 @@ const Billing: React.FC = () => {
 
             <div className="overflow-x-auto">
               {loading ? (
-                <div className="flex justify-center items-center py-12">
-                  <div className="flex items-center space-x-2">
-                    <svg className="animate-spin h-8 w-8 text-amber-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span className="text-amber-900 text-lg">Loading invoices...</span>
+                <div className="flex justify-center items-center py-12" style={{background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)'}}>
+                  <div className="flex flex-col items-center space-y-4 p-8 rounded-lg" style={{background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', boxShadow: '2px 0 10px rgba(0,0,0,0.1)'}}>
+                    <div className="relative">
+                      <svg className="animate-spin h-12 w-12" style={{color: '#667eea'}} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <div className="absolute inset-0 animate-ping">
+                        <svg className="h-12 w-12 opacity-30" style={{color: '#764ba2'}} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"></circle>
+                        </svg>
+                      </div>
+                    </div>
+                    <div className="text-center space-y-2">
+                      <span className="text-lg font-semibold" style={{background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>Loading invoices...</span>
+                      <p className="text-sm" style={{color: 'rgba(102, 126, 234, 0.8)'}}>Please wait while we fetch your billing data</p>
+                      <div className="flex space-x-1 justify-center">
+                        <div className="w-2 h-2 rounded-full animate-bounce" style={{background: '#667eea', animationDelay: '0ms'}}></div>
+                        <div className="w-2 h-2 rounded-full animate-bounce" style={{background: '#7c7ce8', animationDelay: '150ms'}}></div>
+                        <div className="w-2 h-2 rounded-full animate-bounce" style={{background: '#764ba2', animationDelay: '300ms'}}></div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -312,7 +328,7 @@ const Billing: React.FC = () => {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {invoices.map((invoice, index) => (
-                      <tr key={index} className="hover:bg-amber-50 transition duration-150">
+                      <tr key={index} className="transition duration-150 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{invoice.recipient}</td>
                         <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">{invoice.address}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{invoice.date}</td>
@@ -325,7 +341,7 @@ const Billing: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <button 
-                            className="text-amber-700 hover:text-amber-900"
+                            className="text-cornflowerblue-700 hover:text-cornflowerblue-900"
                             onClick={() => handleViewClick(invoice)}
                           >
                             View
@@ -346,7 +362,7 @@ const Billing: React.FC = () => {
                 </p>
                 <div className="mt-4 md:mt-0">
                   <nav className="flex space-x-2">
-                    <button className="px-3 py-1 rounded-md bg-amber-100 text-amber-700 font-medium">1</button>
+                    <button className="px-3 py-1 rounded-md bg-cornflowerblue-100 text-cornflowerblue-700 font-medium">1</button>
                     <button className="px-3 py-1 rounded-md text-gray-600 hover:bg-gray-100">2</button>
                     <button className="px-3 py-1 rounded-md text-gray-600 hover:bg-gray-100">Next →</button>
                   </nav>

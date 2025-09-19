@@ -6,7 +6,7 @@ const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <nav className="bg-amber-900 text-white shadow-lg">
+    <nav className="text-white shadow-lg" style={{background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', boxShadow: '2px 0 10px rgba(0,0,0,0.1)'}}>
       <div className="container mx-auto px-6 py-3">
         <div className="flex justify-between items-center">
           <Link to="/" className="text-xl font-bold">SwiftTrack</Link>
@@ -29,23 +29,23 @@ const Navbar: React.FC = () => {
           
           {/* Desktop Menu */}
           <div className="hidden md:flex space-x-8">
-            <Link to="/" className="hover:text-amber-200 transition duration-300">Home</Link>
+            <Link to="/" className="text-white/80 hover:text-white hover:bg-white/15 px-3 py-2 rounded-lg transition-all duration-300 transform hover:translate-x-1">Home</Link>
              </div>
           
           {/* Auth Buttons - Desktop */}
           <div className="hidden md:flex space-x-4">
-            <Link to="/login" className="px-4 py-2 rounded hover:bg-amber-700 transition duration-300">Login</Link>
-            <Link to="/signup" className="bg-amber-700 px-4 py-2 rounded hover:bg-amber-600 transition duration-300">Sign Up</Link>
+            <Link to="/login" className="text-white/80 hover:text-white hover:bg-white/15 px-4 py-2 rounded-lg transition-all duration-300 transform hover:translate-x-1">Login</Link>
+            <Link to="/signup" className="text-white/80 hover:text-white hover:bg-white/15 px-4 py-2 rounded-lg transition-all duration-300 transform hover:translate-x-1">Sign Up</Link>
           </div>
         </div>
         
         {/* Mobile Menu */}
         {isOpen && (
           <div className="md:hidden mt-4 pb-4">
-            <Link to="/" className="block py-2 hover:bg-amber-800 px-4 rounded">Home</Link>
-           <div className="mt-4 pt-4 border-t border-amber-800">
-              <Link to="/login" className="block py-2 hover:bg-amber-800 px-4 rounded">Login</Link>
-              <Link to="/signup" className="block py-2 hover:bg-amber-800 px-4 rounded">Sign Up</Link>
+            <Link to="/" className="block py-2 text-white/80 hover:text-white hover:bg-white/15 px-4 rounded-lg transition-all duration-300 transform hover:translate-x-1">Home</Link>
+           <div className="mt-4 pt-4 border-t border-white/20">
+              <Link to="/login" className="block py-2 text-white/80 hover:text-white hover:bg-white/15 px-4 rounded-lg transition-all duration-300 transform hover:translate-x-1">Login</Link>
+              <Link to="/signup" className="block py-2 text-white/80 hover:text-white hover:bg-white/15 px-4 rounded-lg transition-all duration-300 transform hover:translate-x-1">Sign Up</Link>
             </div>
           </div>
         )}

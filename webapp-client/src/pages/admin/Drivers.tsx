@@ -170,7 +170,8 @@ const Drivers: React.FC = () => {
               <p className="text-gray-600 mt-2">Manage your drivers and their routes</p>
             </div>
             <button 
-              className="bg-gradient-to-r from-amber-500 to-amber-600 text-white px-6 py-3 rounded-lg shadow-md hover:from-amber-600 hover:to-amber-700 transition-all flex items-center"
+              className="text-white px-6 py-3 rounded-lg shadow-md transition-all flex items-center transform hover:translate-x-1"
+              style={{background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', boxShadow: '0 4px 6px rgba(102, 126, 234, 0.3)'}}
               onClick={() => setIsModalOpen(true)}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
@@ -182,21 +183,21 @@ const Drivers: React.FC = () => {
           
           <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-amber-50">
+              <thead style={{background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)'}}>
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-amber-800 uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-amber-800 uppercase tracking-wider">Current Route</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-amber-800 uppercase tracking-wider">Details</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-amber-800 uppercase tracking-wider">Actions</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider" style={{color: '#667eea'}}>Name</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider" style={{color: '#667eea'}}>Current Route</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider" style={{color: '#667eea'}}>Details</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider" style={{color: '#667eea'}}>Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {drivers.map((d) => (
-                  <tr key={d.id} className="hover:bg-amber-50 transition-colors">
+                  <tr key={d.id} className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-800 font-bold">
+                          <div className="h-10 w-10 rounded-full flex items-center justify-center text-white font-bold" style={{background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'}}>
                             {d.name.charAt(0)}
                           </div>
                         </div>
@@ -210,7 +211,7 @@ const Drivers: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <button 
-                        className="text-amber-600 hover:text-amber-800 flex items-center text-sm font-medium"
+                        className="flex items-center text-sm font-medium transition-colors duration-300" style={{color: '#667eea'}} onMouseEnter={(e) => e.currentTarget.style.color = '#764ba2'} onMouseLeave={(e) => e.currentTarget.style.color = '#667eea'}
                         onClick={() => handleView(d)}
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
@@ -267,7 +268,7 @@ const Drivers: React.FC = () => {
                       autoComplete="name"
                       value={formData.name}
                       onChange={handleInputChange}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       required
                     />
                   </div>
@@ -280,7 +281,7 @@ const Drivers: React.FC = () => {
                       autoComplete="tel"
                       value={formData.telephone}
                       onChange={handleInputChange}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       required
                     />
                   </div>
@@ -292,7 +293,7 @@ const Drivers: React.FC = () => {
                       name="route"
                       value={formData.route}
                       onChange={handleInputChange}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       required
                     />
                   </div>
@@ -306,7 +307,8 @@ const Drivers: React.FC = () => {
                     </button>
                     <button
                       type="submit"
-                      className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
+                      className="px-4 py-2 text-white rounded-lg transition-all duration-300 transform hover:translate-x-1"
+                      style={{background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', boxShadow: '0 4px 6px rgba(102, 126, 234, 0.3)'}}
                     >
                       {editingDriver ? "Update" : "Add"} Driver
                     </button>
@@ -349,7 +351,8 @@ const Drivers: React.FC = () => {
                 </div>
                 <div className="flex justify-end p-6 border-t border-gray-200">
                   <button
-                    className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
+                    className="px-4 py-2 text-white rounded-lg transition-all duration-300 transform hover:translate-x-1"
+                    style={{background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', boxShadow: '0 4px 6px rgba(102, 126, 234, 0.3)'}}
                     onClick={() => setViewingDriver(null)}
                   >
                     Close

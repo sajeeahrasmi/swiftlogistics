@@ -322,14 +322,15 @@ const ClientDashboard: React.FC = () => {
       <div className="p-6 flex-1 ml-64">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-amber-900">Dashboard Overview</h2>
+            <h2 className="text-2xl font-bold" style={{background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>Dashboard Overview</h2>
             <p className="text-sm text-gray-600 mt-1">
               Real-time order data from backend services
             </p>
           </div>
           <button
             onClick={() => window.location.reload()}
-            className="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2 rounded-lg flex items-center transition duration-300"
+            className="text-white px-4 py-2 rounded-lg flex items-center transition duration-300 transform hover:translate-x-1"
+            style={{background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', boxShadow: '0 4px 6px rgba(102, 126, 234, 0.3)'}}
             disabled={loading}
           >
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -359,40 +360,40 @@ const ClientDashboard: React.FC = () => {
 
         {loading ? (
           <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2" style={{borderTopColor: '#667eea', borderBottomColor: '#764ba2'}}></div>
           </div>
         ) : (
           <>
             {/* Summary Panel */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-8">
-              <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-amber-500">
+              <div className="bg-white p-6 rounded-lg shadow-md border-l-4" style={{borderLeftColor: '#667eea'}}>
                 <h3 className="text-sm font-medium text-gray-600 uppercase">Total Orders</h3>
-                <p className="text-3xl font-bold text-amber-900 mt-2">{summary.totalOrders}</p>
+                <p className="text-3xl font-bold mt-2" style={{color: '#667eea'}}>{summary.totalOrders}</p>
                 <p className="text-xs text-gray-500 mt-1">All orders</p>
               </div>
               <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-purple-500">
                 <h3 className="text-sm font-medium text-gray-600 uppercase">Processing</h3>
-                <p className="text-3xl font-bold text-amber-900 mt-2">{summary.processing}</p>
+                <p className="text-3xl font-bold mt-2" style={{color: '#667eea'}}>{summary.processing}</p>
                 <p className="text-xs text-gray-500 mt-1">Being processed</p>
               </div>
               <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-yellow-500">
                 <h3 className="text-sm font-medium text-gray-600 uppercase">In Warehouse</h3>
-                <p className="text-3xl font-bold text-amber-900 mt-2">{summary.inWarehouse}</p>
+                <p className="text-3xl font-bold mt-2" style={{color: '#667eea'}}>{summary.inWarehouse}</p>
                 <p className="text-xs text-gray-500 mt-1">At warehouse</p>
               </div>
               <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500">
                 <h3 className="text-sm font-medium text-gray-600 uppercase">Out for Delivery</h3>
-                <p className="text-3xl font-bold text-amber-900 mt-2">{summary.outForDelivery}</p>
+                <p className="text-3xl font-bold mt-2" style={{color: '#667eea'}}>{summary.outForDelivery}</p>
                 <p className="text-xs text-gray-500 mt-1">En route</p>
               </div>
               <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500">
                 <h3 className="text-sm font-medium text-gray-600 uppercase">Delivered</h3>
-                <p className="text-3xl font-bold text-amber-900 mt-2">{summary.delivered}</p>
+                <p className="text-3xl font-bold mt-2" style={{color: '#667eea'}}>{summary.delivered}</p>
                 <p className="text-xs text-gray-500 mt-1">Completed</p>
               </div>
               <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-red-500">
                 <h3 className="text-sm font-medium text-gray-600 uppercase">Cancelled</h3>
-                <p className="text-3xl font-bold text-amber-900 mt-2">{summary.cancelled}</p>
+                <p className="text-3xl font-bold mt-2" style={{color: '#667eea'}}>{summary.cancelled}</p>
                 <p className="text-xs text-gray-500 mt-1">Cancelled orders</p>
               </div>
             </div>
@@ -420,7 +421,7 @@ const ClientDashboard: React.FC = () => {
 
             {/* Orders List */}
             <div className="bg-white p-6 rounded-lg shadow-md">
-              <h3 className="text-xl font-semibold text-amber-900 mb-4">
+              <h3 className="text-xl font-semibold mb-4" style={{color: '#667eea'}}>
                 Recent Orders (Detailed View)
                 {statusFilter !== 'All' && (
                   <span className="text-sm text-gray-600 ml-2">
@@ -457,7 +458,7 @@ const ClientDashboard: React.FC = () => {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {filteredOrders.slice(0, 8).map((order: any) => (
-                        <tr key={order.id} className="hover:bg-amber-50 transition duration-150">
+                        <tr key={order.id} className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition duration-150">
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.recipient}</td>
                           <td className="px-6 py-4 text-sm text-gray-900 max-w-xs">{order.address}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.date}</td>

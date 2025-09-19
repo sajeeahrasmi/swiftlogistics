@@ -258,18 +258,26 @@ const LoadingComponent: React.FC<{ retryCount?: number; maxRetries?: number }> =
   maxRetries = 3 
 }) => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-amber-50">
-      <div className="flex flex-col items-center space-y-4">
+    <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)'}}>
+      <div className="flex flex-col items-center space-y-6 p-8 rounded-lg" style={{background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', boxShadow: '2px 0 10px rgba(0,0,0,0.1)'}}>
         <div className="relative">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-amber-200"></div>
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-amber-600 border-t-transparent absolute top-0 left-0"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-4" style={{borderColor: 'rgba(102, 126, 234, 0.3)'}}></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-t-transparent absolute top-0 left-0" style={{borderColor: '#667eea'}}></div>
+          <div className="absolute inset-0 animate-ping">
+            <div className="rounded-full h-16 w-16 border-2 opacity-30" style={{borderColor: '#764ba2'}}></div>
+          </div>
         </div>
-        <div className="text-center">
-          <h3 className="text-lg font-medium text-amber-900">Verifying Access</h3>
-          <p className="text-sm text-amber-700 mt-1">
+        <div className="text-center space-y-2">
+          <h3 className="text-lg font-medium" style={{background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>Verifying Access</h3>
+          <p className="text-sm" style={{color: 'rgba(102, 126, 234, 0.8)'}}>
             Please wait while we check your permissions...
             {retryCount > 0 && ` (Attempt ${retryCount}/${maxRetries})`}
           </p>
+          <div className="flex space-x-1 justify-center">
+            <div className="w-2 h-2 rounded-full animate-bounce" style={{background: '#667eea', animationDelay: '0ms'}}></div>
+            <div className="w-2 h-2 rounded-full animate-bounce" style={{background: '#7c7ce8', animationDelay: '150ms'}}></div>
+            <div className="w-2 h-2 rounded-full animate-bounce" style={{background: '#764ba2', animationDelay: '300ms'}}></div>
+          </div>
         </div>
       </div>
     </div>

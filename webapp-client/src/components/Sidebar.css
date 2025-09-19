@@ -4,7 +4,8 @@
   position: fixed;
   top: 0;
   left: 0;
-  background-color: #1E1E2F;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 2px 0 10px rgba(0,0,0,0.1);
   color: white;
   padding: 20px;
 }
@@ -21,9 +22,17 @@
   margin: 20px 0;
 }
 .sidebar ul li a {
-  color: white;
+  color: rgba(255,255,255,0.8);
   text-decoration: none;
+  transition: all 0.3s;
+  margin: 0.2rem 0;
+  border-radius: 8px;
+  display: block;
+  padding: 8px 12px;
 }
-.sidebar ul li a:hover {
-  color: #00A8E8;
+.sidebar ul li a:hover,
+.sidebar ul li a.active {
+  color: white;
+  background-color: rgba(255,255,255,0.15);
+  transform: translateX(5px);
 }

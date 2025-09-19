@@ -60,7 +60,7 @@ const Profile: React.FC = () => {
       <Sidebar role="client" />
       <div className="flex-1 p-10">
         <div className="max-w-xl mx-auto bg-white rounded-lg shadow-md p-8">
-          <h2 className="text-2xl font-bold mb-6 text-amber-900">Edit Profile</h2>
+          <h2 className="text-2xl font-bold mb-6" style={{background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>Edit Profile</h2>
           <form onSubmit={handleUpdate} className="space-y-5">
             <div>
               <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
@@ -118,7 +118,8 @@ const Profile: React.FC = () => {
             <div className="flex space-x-4 mt-6">
               <button
                 type="submit"
-                className="flex items-center px-5 py-2 bg-amber-700 text-white rounded-lg hover:bg-amber-800 font-semibold"
+                className="flex items-center px-5 py-2 text-white rounded-lg font-semibold transition duration-300 transform hover:translate-x-1"
+                style={{background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', boxShadow: '0 4px 6px rgba(102, 126, 234, 0.3)'}}
               >
                 Update
               </button>

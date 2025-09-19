@@ -441,7 +441,7 @@ const Orders: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch(status) {
       case 'Delivered': return 'bg-green-100 text-green-800';
-      case 'In Warehouse': return 'bg-amber-100 text-amber-800';
+      case 'In Warehouse': return 'bg-blue-100 text-blue-800';
       case 'Out for Delivery': return 'bg-blue-100 text-blue-800';
       case 'Processing': return 'bg-purple-100 text-purple-800';
       case 'Cancelled': return 'bg-red-100 text-red-800';
@@ -457,7 +457,7 @@ const Orders: React.FC = () => {
     <div className="p-6 bg-gray-50 min-h-screen">
        <Sidebar role="client" />
       <div className="p-6 flex-1 ml-64">
-        <h2 className="text-3xl font-bold text-amber-900 mb-6">Order Management</h2>
+        <h2 className="text-3xl font-bold mb-6" style={{background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>Order Management</h2>
         
        
 
@@ -465,7 +465,7 @@ const Orders: React.FC = () => {
           {/* Header with actions */}
           <div className="p-6 border-b border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center">
             <div>
-              <h3 className="text-lg font-semibold text-amber-900">Order History</h3>
+              <h3 className="text-lg font-semibold" style={{color: '#667eea'}}>Order History</h3>
               <p className="text-sm text-gray-600">Manage and track your delivery orders</p>
               {error && (
                 <p className="text-sm text-red-600 mt-1">
@@ -476,7 +476,7 @@ const Orders: React.FC = () => {
             
             <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4 mt-4 md:mt-0">
               <select 
-                className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
               >
@@ -489,7 +489,8 @@ const Orders: React.FC = () => {
               </select>
               
               <button
-                className="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2 rounded-lg flex items-center transition duration-300 disabled:opacity-50"
+                className="text-white px-4 py-2 rounded-lg flex items-center transition duration-300 disabled:opacity-50 transform hover:translate-x-1"
+                style={{background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', boxShadow: '0 4px 6px rgba(102, 126, 234, 0.3)'}}
                 onClick={() => setShowForm(!showForm)}
                 disabled={loading}
               >
@@ -503,8 +504,8 @@ const Orders: React.FC = () => {
 
           {/* New Order Form */}
           {showForm && (
-            <div className="p-6 bg-amber-50 border-b border-amber-200">
-              <h3 className="text-lg font-semibold text-amber-900 mb-4">Create New Order</h3>
+            <div className="p-6 border-b" style={{background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)', borderColor: 'rgba(102, 126, 234, 0.3)'}}>
+              <h3 className="text-lg font-semibold mb-4" style={{color: '#667eea'}}>Create New Order</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="recipient-name" className="block text-sm font-medium text-gray-700 mb-1">Recipient Name</label>
@@ -513,7 +514,7 @@ const Orders: React.FC = () => {
                     name="recipientName"
                     type="text"
                     autoComplete="name"
-                    className="border border-gray-300 rounded-lg p-3 w-full focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                    className="border border-gray-300 rounded-lg p-3 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Enter recipient name"
                     value={recipient}
                     onChange={(e) => setRecipient(e.target.value)}
@@ -526,7 +527,7 @@ const Orders: React.FC = () => {
                     name="recipientPhone"
                     type="tel"
                     autoComplete="tel"
-                    className="border border-gray-300 rounded-lg p-3 w-full focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                    className="border border-gray-300 rounded-lg p-3 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Enter phone number (e.g., +94123456789 or 0123456789)"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
@@ -541,7 +542,7 @@ const Orders: React.FC = () => {
                     name="deliveryAddress"
                     type="text"
                     autoComplete="street-address"
-                    className="border border-gray-300 rounded-lg p-3 w-full focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                    className="border border-gray-300 rounded-lg p-3 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Enter delivery address"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
@@ -554,7 +555,7 @@ const Orders: React.FC = () => {
                     name="numberOfItems"
                     type="number"
                     min="1"
-                    className="border border-gray-300 rounded-lg p-3 w-full focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                    className="border border-gray-300 rounded-lg p-3 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Enter quantity (e.g., 5)"
                     value={items}
                     onChange={(e) => setItems(e.target.value)}
@@ -569,7 +570,7 @@ const Orders: React.FC = () => {
                     min="0.01"
                     max="10000"
                     step="0.01"
-                    className="border border-gray-300 rounded-lg p-3 w-full focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                    className="border border-gray-300 rounded-lg p-3 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Enter value per item (e.g., 500)"
                     value={value}
                     onChange={(e) => setValue(e.target.value)}
@@ -580,7 +581,7 @@ const Orders: React.FC = () => {
                   <select
                     id="order-status"
                     name="orderStatus"
-                    className="border border-gray-300 rounded-lg p-3 w-full focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                    className="border border-gray-300 rounded-lg p-3 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
                   >
@@ -600,7 +601,8 @@ const Orders: React.FC = () => {
                   Cancel
                 </button>
                 <button
-                  className="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2 rounded-lg transition duration-300 disabled:opacity-50 flex items-center"
+                  className="text-white px-4 py-2 rounded-lg transition duration-300 disabled:opacity-50 flex items-center transform hover:translate-x-1"
+                  style={{background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', boxShadow: '0 4px 6px rgba(102, 126, 234, 0.3)'}}
                   onClick={submitOrder}
                   disabled={submitting}
                 >
@@ -619,13 +621,28 @@ const Orders: React.FC = () => {
           {/* Orders Table */}
           <div className="overflow-x-auto">
             {loading ? (
-              <div className="flex justify-center items-center py-12">
-                <div className="flex items-center space-x-2">
-                  <svg className="animate-spin h-8 w-8 text-amber-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span className="text-amber-900 text-lg">Loading orders...</span>
+              <div className="flex justify-center items-center py-12" style={{background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)'}}>
+                <div className="flex flex-col items-center space-y-4 p-8 rounded-lg" style={{background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', boxShadow: '2px 0 10px rgba(0,0,0,0.1)'}}>
+                  <div className="relative">
+                    <svg className="animate-spin h-12 w-12" style={{color: '#667eea'}} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <div className="absolute inset-0 animate-ping">
+                      <svg className="h-12 w-12 opacity-30" style={{color: '#764ba2'}} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"></circle>
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="text-center space-y-2">
+                    <span className="text-lg font-semibold" style={{background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>Loading orders...</span>
+                    <p className="text-sm" style={{color: 'rgba(102, 126, 234, 0.8)'}}>Please wait while we fetch your data</p>
+                    <div className="flex space-x-1 justify-center">
+                      <div className="w-2 h-2 rounded-full animate-bounce" style={{background: '#667eea', animationDelay: '0ms'}}></div>
+                      <div className="w-2 h-2 rounded-full animate-bounce" style={{background: '#7c7ce8', animationDelay: '150ms'}}></div>
+                      <div className="w-2 h-2 rounded-full animate-bounce" style={{background: '#764ba2', animationDelay: '300ms'}}></div>
+                    </div>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -642,7 +659,7 @@ const Orders: React.FC = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredOrders.map((order) => (
-                    <tr key={order.id} className="hover:bg-amber-50 transition duration-150">
+                    <tr key={order.id} className="transition duration-150 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.recipient}</td>
                       <td className="px-6 py-4 text-sm text-gray-900 max-w-xs">{order.address}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.date}</td>
