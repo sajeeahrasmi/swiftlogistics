@@ -342,6 +342,126 @@ router.post('/emergency/pause-system', strictAdminLimiter, async (req, res) => {
   });
 });
 
+// Admin tracking endpoint - Get all tracking data
+router.get('/tracking/orders', adminLimiter, async (req, res) => {
+  try {
+    console.log('Admin tracking endpoint called');
+    
+    // Get tracking data from the tracking service
+    const axios = require('axios');
+    const trackingServiceUrl = process.env.TRACKING_SERVICE_URL || 'http://localhost:3003';
+    
+    try {
+      const trackingResponse = await axios.get(`${trackingServiceUrl}/api/orders`);
+      console.log('Tracking service response:', trackingResponse.data);
+      
+      if (trackingResponse.data && trackingResponse.data.success && trackingResponse.data.data) {
+        // Enhance tracking data with client and driver information from the database
+        const trackingOrders = trackingResponse.data.data;
+        
+        for (let order of trackingOrders) {
+          // Try to get client information
+          if (order.client_id) {
+            try {
+              const clientQuery = 'SELECT company_name FROM clients WHERE id = $1';
+              const clientResult = await query(clientQuery, [order.client_id]);
+              if (clientResult.rows.length > 0) {
+                order.clientName = clientResult.rows[0].company_name;
+              }
+            } catch (err) {
+              console.warn(`Could not fetch client info for order ${order.trackingNumber}:`, err.message);
+              order.clientName = 'Unknown Client';
+            }
+          }
+          
+          // Try to get driver information from orders table
+          try {
+            const driverQuery = `
+              SELECT d.first_name, d.last_name 
+              FROM orders o 
+              JOIN drivers d ON o.assigned_driver_id = d.id 
+              WHERE o.tracking_number = $1
+            `;
+            const driverResult = await query(driverQuery, [order.trackingNumber]);
+            if (driverResult.rows.length > 0) {
+              const driver = driverResult.rows[0];
+              order.driverName = `${driver.first_name} ${driver.last_name}`;
+            } else {
+              order.driverName = 'Unassigned';
+            }
+          } catch (err) {
+            console.warn(`Could not fetch driver info for order ${order.trackingNumber}:`, err.message);
+            order.driverName = 'Unknown Driver';
+          }
+        }
+        
+        res.json({
+          success: true,
+          data: trackingOrders,
+          count: trackingOrders.length
+        });
+      } else {
+        res.json({
+          success: true,
+          data: [],
+          count: 0,
+          message: 'No tracking data available'
+        });
+      }
+    } catch (trackingError) {
+      console.error('Error calling tracking service:', trackingError.message);
+      
+      // Fallback to mock data if tracking service is down
+      const mockTrackingData = [
+        {
+          id: 1,
+          trackingNumber: "TRK-728415",
+          recipient: "Alice Johnson",
+          address: "123 Galle Road, Colombo 03",
+          status: "In Warehouse",
+          lastUpdate: "2025-09-18 09:30 AM",
+          estimatedDelivery: "2025-09-20",
+          items: 3,
+          currentLocation: "Colombo Main Warehouse",
+          routeProgress: 20,
+          client_id: 1,
+          clientName: "Acme Corp",
+          driverName: "John Silva"
+        },
+        {
+          id: 2,
+          trackingNumber: "TRK-728416",
+          recipient: "Bob Williams",
+          address: "45 Union Place, Colombo 02",
+          status: "Processing",
+          lastUpdate: "2025-09-18 11:15 AM",
+          estimatedDelivery: "2025-09-19",
+          items: 2,
+          currentLocation: "Processing Center",
+          routeProgress: 40,
+          client_id: 1,
+          clientName: "Beta Ltd",
+          driverName: "Maria Perera"
+        }
+      ];
+      
+      res.json({
+        success: true,
+        data: mockTrackingData,
+        count: mockTrackingData.length,
+        message: 'Using fallback data - tracking service unavailable'
+      });
+    }
+  } catch (error) {
+    console.error('Admin tracking endpoint error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch tracking data',
+      error: error.message
+    });
+  }
+});
+
 // Health check endpoint
 router.get('/health/admin', (req, res) => {
   res.json({
