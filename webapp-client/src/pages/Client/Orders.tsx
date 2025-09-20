@@ -7,7 +7,6 @@ interface Order {
   recipient: string;
   address: string;
   status: string;
-  date: string;
   items: number;
   value: string;
 }
@@ -28,174 +27,56 @@ const Orders: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [filterStatus, setFilterStatus] = useState('All');
 
-  // Load orders from API on component mount
+  // Load mock orders data
   useEffect(() => {
-    const loadOrdersAndProfile = async () => {
+    const loadMockOrders = async () => {
       try {
         setLoading(true);
         setError(null);
         
-        // Load both user profile and orders
-        const [profileResponse, ordersResponse] = await Promise.allSettled([
-          getProfile(),
-          getClientOrders()
-        ]);
-
-        // Handle profile - we don't need to store it, just check if it loaded
-        if (profileResponse.status === 'rejected') {
-          console.warn('Profile load failed:', profileResponse.reason);
-        }
-
-        // Handle orders
-        if (ordersResponse.status === 'fulfilled') {
-          const response = ordersResponse.value;
-          console.log('Orders API response:', response);
-          
-          // Extract orders data from response - check for different response structures
-          let ordersData = [];
-          if (response?.data?.orders) {
-            ordersData = response.data.orders;
-          } else if (response?.data && Array.isArray(response.data)) {
-            ordersData = response.data;
-          } else if (Array.isArray(response)) {
-            ordersData = response;
-          } else {
-            console.warn('Unexpected orders response structure:', response);
-            ordersData = [];
+        // Simulate loading delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Mock orders data - the specific orders you requested
+        const mockOrders: Order[] = [
+          {
+            id: 2,
+            recipient: "Bob Williams",
+            address: "45 Union Place, Colombo 02",
+            status: "Processing",
+            items: 2,
+            value: "LKR 2,000"
+          },
+          {
+            id: 4,
+            recipient: "Diana Miller",
+            address: "12 Ward Place, Colombo 07",
+            status: "Delivered",
+            items: 1,
+            value: "LKR 1,000"
+          },
+          {
+            id: 7,
+            recipient: "George Martin",
+            address: "90 Havelock Road, Colombo 05",
+            status: "Delivered",
+            items: 3,
+            value: "LKR 3,000"
           }
-
-          console.log('Extracted orders data:', ordersData);
-
-          // Ensure ordersData is an array before mapping
-          if (Array.isArray(ordersData)) {
-            const transformedOrders = ordersData.map((order: any) => {
-              console.log('=== DEBUGGING ORDER DATA ===');
-              console.log('Raw order from backend:', order);
-              console.log('Available fields:', Object.keys(order));
-              
-              // Get stored data once for this order
-              const orderKey = `order_${order.id}`;
-              const storedData = localStorage.getItem(orderKey);
-              let storedValues = null;
-              if (storedData) {
-                try {
-                  storedValues = JSON.parse(storedData);
-                  console.log('Found stored values:', storedValues);
-                } catch (e) {
-                  console.log('Failed to parse stored data');
-                }
-              }
-              
-              // Handle items count - just the raw quantity entered, no calculation
-              let itemsCount = 1; // Default fallback
-              
-              console.log('Checking items count fields:');
-              console.log('- order.items_count:', order.items_count);
-              console.log('- order.total_items:', order.total_items);
-              console.log('- order.items (type):', typeof order.items, order.items);
-              
-              // First check localStorage for the exact value entered
-              if (storedValues && storedValues.items && storedValues.items > 0) {
-                itemsCount = storedValues.items;
-                console.log('Using exact entered items count from localStorage:', itemsCount);
-              } else {
-                // Fallback to backend fields, but don't calculate - just use direct values
-                if (order.items_count && !isNaN(parseInt(order.items_count))) {
-                  itemsCount = parseInt(order.items_count);
-                  console.log('Using items_count from backend:', itemsCount);
-                } else {
-                  console.log('Using default items count:', itemsCount);
-                }
-              }
-              
-              // Handle value - just the raw unit value entered, no calculation or multiplication
-              let orderValue = 'LKR 0'; // Default fallback
-              
-              console.log('Checking value fields:');
-              console.log('- order.unit_value:', order.unit_value);
-              console.log('- order.value:', order.value);
-              console.log('- order.total_value:', order.total_value);
-              console.log('- order.total_amount:', order.total_amount);
-              
-              // First priority: Check localStorage for the exact value entered
-              if (storedValues && storedValues.value && storedValues.value > 0) {
-                orderValue = `LKR ${storedValues.value.toLocaleString()}`;
-                console.log('Using exact entered value from localStorage:', orderValue);
-              } else {
-                // Fallback to backend fields - use direct value, no division or calculation
-                if (order.value && !isNaN(parseFloat(order.value)) && parseFloat(order.value) > 0) {
-                  orderValue = `LKR ${parseFloat(order.value).toLocaleString()}`;
-                  console.log('Using direct order.value from backend:', orderValue);
-                } else if (order.unit_value && !isNaN(parseFloat(order.unit_value)) && parseFloat(order.unit_value) > 0) {
-                  orderValue = `LKR ${parseFloat(order.unit_value).toLocaleString()}`;
-                  console.log('Using unit_value from backend:', orderValue);
-                } else {
-                  console.log('No valid value found, using default:', orderValue);
-                }
-              }
-              
-              // Handle status - prioritize locally stored status from submission
-              let orderStatus = 'Processing'; // Default fallback
-              
-              console.log('Checking status fields:');
-              console.log('- order.status:', order.status);
-              console.log('- order.order_status:', order.order_status);
-              
-              // First priority: Check localStorage for the status set during submission
-              if (storedValues && storedValues.status) {
-                orderStatus = storedValues.status;
-                console.log('Using status from localStorage (set during submission):', orderStatus);
-              } else {
-                // Fallback to backend status
-                if (order.status) {
-                  orderStatus = order.status;
-                  console.log('Using order.status from backend:', orderStatus);
-                } else if (order.order_status) {
-                  orderStatus = order.order_status;
-                  console.log('Using order_status from backend:', orderStatus);
-                } else {
-                  console.log('No valid status found, using default:', orderStatus);
-                }
-              }
-              
-              const result = {
-                id: order.id || order.order_id,
-                recipient: order.recipient_name || order.recipient || 'Unknown',
-                address: order.delivery_address || order.address || 'No address',
-                status: orderStatus, // Use the properly resolved status
-                date: order.created_at ? order.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
-                items: itemsCount,
-                value: orderValue
-              };
-              
-              console.log('Final transformed order:', result);
-              console.log('=== END DEBUG ===');
-              
-              return result;
-            });
-            
-            setOrders(transformedOrders);
-          } else {
-            console.error('Orders data is not an array:', ordersData);
-            setOrders([]);
-          }
-        } else {
-          console.error('Failed to load orders:', ordersResponse.reason);
-          setOrders([]);
-        }
+        ];
+        
+        setOrders(mockOrders);
         
       } catch (err: any) {
         console.error('Failed to load orders:', err);
         setError(err.message || 'Failed to load orders');
-        
-        // Don't fallback to mock data - keep orders empty to show real state
         setOrders([]);
       } finally {
         setLoading(false);
       }
     };
 
-    loadOrdersAndProfile();
+    loadMockOrders();
   }, []);
 
   const submitOrder = async () => {
@@ -324,7 +205,6 @@ const Orders: React.FC = () => {
         recipient,
         address,
         status: newOrderStatus, // Use the selected status
-        date: new Date().toISOString().split('T')[0],
         items: parseInt(items) || 1, // Always use the value you entered
         value: `LKR ${parseFloat(value).toLocaleString()}` // Always use the value you entered locally
       };
@@ -332,6 +212,7 @@ const Orders: React.FC = () => {
       console.log('New order created locally with entered values:', newOrder);
       console.log('=== END SUBMISSION DEBUG ===');
       
+      // Add the new order to the front of the list
       setOrders([newOrder, ...orders]);
       
       // Reset form
@@ -345,68 +226,8 @@ const Orders: React.FC = () => {
       
       alert('Order submitted successfully!');
       
-      // Reload orders from backend to get the latest data instead of page refresh
-      try {
-        const updatedOrdersResponse = await getClientOrders();
-        if (updatedOrdersResponse?.data?.orders && Array.isArray(updatedOrdersResponse.data.orders)) {
-          const transformedOrders = updatedOrdersResponse.data.orders.map((order: any) => {
-            console.log('Processing updated order from backend:', order);
-            
-            // Get stored data for this order
-            const orderKey = `order_${order.id}`;
-            const storedData = localStorage.getItem(orderKey);
-            let storedValues = null;
-            if (storedData) {
-              try {
-                storedValues = JSON.parse(storedData);
-              } catch (e) {
-                console.log('Failed to parse stored data');
-              }
-            }
-            
-            // Use the same transformation logic as the initial load - no calculations
-            let itemsCount = 1;
-            if (storedValues && storedValues.items && storedValues.items > 0) {
-              itemsCount = storedValues.items; // Use exact entered value
-            } else if (order.items_count && !isNaN(parseInt(order.items_count))) {
-              itemsCount = parseInt(order.items_count);
-            }
-            
-            let orderValue = 'LKR 0';
-            if (storedValues && storedValues.value && storedValues.value > 0) {
-              orderValue = `LKR ${storedValues.value.toLocaleString()}`; // Use exact entered value
-            } else if (order.value && !isNaN(parseFloat(order.value)) && parseFloat(order.value) > 0) {
-              orderValue = `LKR ${parseFloat(order.value).toLocaleString()}`;
-            } else if (order.unit_value && !isNaN(parseFloat(order.unit_value)) && parseFloat(order.unit_value) > 0) {
-              orderValue = `LKR ${parseFloat(order.unit_value).toLocaleString()}`;
-            }
-            
-            // Handle status - prioritize locally stored status
-            let orderStatus = 'Processing';
-            if (storedValues && storedValues.status) {
-              orderStatus = storedValues.status; // Use status set during submission
-            } else if (order.status) {
-              orderStatus = order.status;
-            } else if (order.order_status) {
-              orderStatus = order.order_status;
-            }
-            
-            return {
-              id: order.id || order.order_id,
-              recipient: order.recipient_name || order.recipient || 'Unknown',
-              address: order.delivery_address || order.address || 'No address',
-              status: orderStatus, // Use the properly resolved status
-              date: order.created_at ? order.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
-              items: itemsCount,
-              value: orderValue
-            };
-          });
-          setOrders(transformedOrders);
-        }
-      } catch (refreshError) {
-        console.warn('Could not refresh orders after submission:', refreshError);
-        // Keep the manually added order if refresh fails
-      }
+      // Add the new order to the front of the list
+      setOrders([newOrder, ...orders]);
       
     } catch (err: any) {
       console.error('Failed to submit order:', err);
@@ -651,10 +472,9 @@ const Orders: React.FC = () => {
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No. of Items</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -662,14 +482,13 @@ const Orders: React.FC = () => {
                     <tr key={order.id} className="transition duration-150 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.recipient}</td>
                       <td className="px-6 py-4 text-sm text-gray-900 max-w-xs">{order.address}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.date}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.items}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.value}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(order.status)}`}>
                           {order.status}
                         </span>
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.items}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.value}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -16,22 +16,22 @@ const driverLocations = {};
 
 // Mock order tracking data for demo purposes
 const orderTrackingData = {
-  "TRK-728415": {
+  "TRK-100000": {
     id: 1,
-    trackingNumber: "TRK-728415",
-    recipient: "Alice Johnson",
-    address: "123 Galle Road, Colombo 03",
-    status: "In Warehouse",
-    lastUpdate: "2025-09-18 09:30 AM",
+    trackingNumber: "TRK-100000",
+    recipient: "Colombo Electronics Ltd",
+    address: "456 Customer Avenue, Colombo 03",
+    status: "Processing",
+    lastUpdate: "2025-09-20 12:58 AM",
     estimatedDelivery: "2025-09-20",
     items: 3,
     currentLocation: "Colombo Main Warehouse",
     routeProgress: 20,
     client_id: 1
   },
-  "TRK-728416": {
+  "TRK-100006": {
     id: 2,
-    trackingNumber: "TRK-728416",
+    trackingNumber: "TRK-100006",
     recipient: "Bob Williams",
     address: "45 Union Place, Colombo 02",
     status: "Processing",
@@ -42,9 +42,9 @@ const orderTrackingData = {
     routeProgress: 40,
     client_id: 1
   },
-  "TRK-728417": {
+  "TRK-100004": {
     id: 3,
-    trackingNumber: "TRK-728417",
+    trackingNumber: "TRK-100004",
     recipient: "Charlie Brown",
     address: "78 Hyde Park Corner, Colombo 02",
     status: "Processing",
@@ -55,9 +55,9 @@ const orderTrackingData = {
     routeProgress: 60,
     client_id: 2
   },
-  "TRK-728418": {
+  "TRK-100008": {
     id: 4,
-    trackingNumber: "TRK-728418",
+    trackingNumber: "TRK-100008",
     recipient: "Diana Miller",
     address: "12 Ward Place, Colombo 07",
     status: "Delivered",
@@ -68,7 +68,7 @@ const orderTrackingData = {
     routeProgress: 100,
     client_id: 1
   },
-  "TRK-728419": {
+  "TRK-100003": {
     id: 5,
     trackingNumber: "TRK-728419",
     recipient: "Ethan Davis",
@@ -107,9 +107,9 @@ const orderTrackingData = {
     routeProgress: 100,
     client_id: 1
   },
-  "TRK-728422": {
+  "TRK-100003": {
     id: 8,
-    trackingNumber: "TRK-728422",
+    trackingNumber: "TRK-100003",
     recipient: "Helen Taylor",
     address: "22 Horton Place, Colombo 07",
     status: "In Warehouse",
